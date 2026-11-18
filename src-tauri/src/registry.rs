@@ -1,0 +1,79 @@
+//! Emulator registry: data, not code.
+//! Loads `emulators.json`. A copy is embedded in the binary; if a file named
+//! `registry.json` exists in the app's local data folder it wins, so the list
+//! can be updated later without shipping a new app version.
+
+use serde::{Deserialize, Serialize};
+use std::fs;
+use tauri::{AppHandle, Manager};
+
+const EMBEDDED: &str = include_str!("../resources/emulators.json");
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum Source {
+    /// Latest GitHub release; pick the asset whose name matches `assetPattern`.
+    Github {
+        repo: String,
+        #[serde(rename = "assetPattern")]
+        asset_pattern: String,
+    },
+    /// Vendor download page (resolved later by the installer).
+    Page {
+        url: String,
+        #[serde(rename = "assetPattern", default)]
+        asset_pattern: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct System {
+    pub id: String,
+    pub name: String,
+    pub emulator: String,
+    pub source: Source,
+    pub exts: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Registry {
+    pub systems: Vec<System>,
+}
+
+fn parse(text: &str) -> Result<Registry, String> {
+    serde_json::from_str(text).map_err(|e| format!("registry parse error: {e}"))
+}
+
+pub fn load(app: &AppHandle) -> Result<Registry, String> {
+    if let Ok(dir) = app.path().app_local_data_dir() {
+        let path = dir.join("registry.json");
+        if path.exists() {
+            let text = fs::read_to_string(&path)
+                .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+            return parse(&text);
+        }
+    }
+    parse(EMBEDDED)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embedded_registry_parses() {
+        let r = parse(EMBEDDED).expect("embedded registry must parse");
+        assert!(!r.systems.is_empty());
+        assert!(r.systems.iter().all(|s| !s.id.is_empty() && !s.exts.is_empty()));
+    }
+
+    #[test]
+    fn ids_are_unique() {
+        let r = parse(EMBEDDED).unwrap();
+        let mut ids: Vec<_> = r.systems.iter().map(|s| s.id.as_str()).collect();
+        ids.sort();
+        let n = ids.len();
+        ids.dedup();
+        assert_eq!(n, ids.len(), "duplicate system id in registry");
+    }
+}

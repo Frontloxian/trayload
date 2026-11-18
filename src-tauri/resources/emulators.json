@@ -1,0 +1,25 @@
+{
+  "_note": "Windows registry. 'source' tells the launcher where to fetch the latest build; 'assetPattern' is a regex matched against release asset names. Patterns are first guesses: verify each against the real release page before shipping.",
+  "systems": [
+    { "id": "nes",  "name": "NES / Famicom",       "emulator": "Mesen",        "source": { "type": "github", "repo": "SourMesen/Mesen2",       "assetPattern": "Windows.*\\.zip$" }, "exts": ["nes", "fds", "unf"] },
+    { "id": "snes", "name": "Super Nintendo",      "emulator": "Mesen 2",      "source": { "type": "github", "repo": "SourMesen/Mesen2",       "assetPattern": "Windows.*\\.zip$" }, "exts": ["sfc", "smc", "fig"] },
+    { "id": "gb",   "name": "Game Boy / Color",    "emulator": "mGBA",         "source": { "type": "github", "repo": "mgba-emu/mgba",          "assetPattern": "win64.*\\.7z$" },    "exts": ["gb", "gbc"] },
+    { "id": "gba",  "name": "Game Boy Advance",    "emulator": "mGBA",         "source": { "type": "github", "repo": "mgba-emu/mgba",          "assetPattern": "win64.*\\.7z$" },    "exts": ["gba"] },
+    { "id": "n64",  "name": "Nintendo 64",         "emulator": "RMG",          "source": { "type": "github", "repo": "Rosalie241/RMG",         "assetPattern": "Windows.*portable.*\\.zip$" }, "exts": ["z64", "n64", "v64"] },
+    { "id": "nds",  "name": "Nintendo DS",         "emulator": "melonDS",      "source": { "type": "github", "repo": "melonDS-emu/melonDS",    "assetPattern": "win.*x86_64.*\\.zip$" }, "exts": ["nds", "dsi"] },
+    { "id": "3ds",  "name": "Nintendo 3DS",        "emulator": "Azahar",       "source": { "type": "github", "repo": "azahar-emu/azahar",      "assetPattern": "windows.*\\.zip$" }, "exts": ["3ds", "cci", "cxi"] },
+    { "id": "gc",   "name": "GameCube",            "emulator": "Dolphin",      "source": { "type": "page",   "url": "https://dolphin-emu.org/download/" }, "exts": ["iso", "gcm", "rvz", "gcz"] },
+    { "id": "wii",  "name": "Wii",                 "emulator": "Dolphin",      "source": { "type": "page",   "url": "https://dolphin-emu.org/download/" }, "exts": ["iso", "wbfs", "rvz", "wad"] },
+    { "id": "wiiu", "name": "Wii U",               "emulator": "Cemu",         "source": { "type": "github", "repo": "cemu-project/Cemu",      "assetPattern": "windows-x64.*\\.zip$" }, "exts": ["wud", "wux", "wua", "rpx"] },
+    { "id": "ps1",  "name": "PlayStation",         "emulator": "DuckStation",  "source": { "type": "github", "repo": "stenzek/duckstation",    "assetPattern": "windows-x64.*\\.zip$" }, "exts": ["bin", "cue", "chd", "pbp"] },
+    { "id": "ps2",  "name": "PlayStation 2",       "emulator": "PCSX2",        "source": { "type": "github", "repo": "PCSX2/pcsx2",            "assetPattern": "windows.*x64.*\\.7z$" }, "exts": ["iso", "chd", "cso"] },
+    { "id": "ps3",  "name": "PlayStation 3",       "emulator": "RPCS3",        "source": { "type": "github", "repo": "RPCS3/rpcs3-binaries-win","assetPattern": "win64.*\\.7z$" }, "exts": ["iso", "pkg"] },
+    { "id": "psp",  "name": "PSP",                 "emulator": "PPSSPP",       "source": { "type": "page",   "url": "https://www.ppsspp.org/download/" }, "exts": ["iso", "cso", "pbp"] },
+    { "id": "vita", "name": "PS Vita",             "emulator": "Vita3K",       "source": { "type": "github", "repo": "Vita3K/Vita3K",          "assetPattern": "windows.*\\.zip$" }, "exts": ["vpk"] },
+    { "id": "dc",   "name": "Dreamcast",           "emulator": "Flycast",      "source": { "type": "github", "repo": "flyinghead/flycast",     "assetPattern": "win.*\\.zip$" }, "exts": ["gdi", "cdi", "chd"] },
+    { "id": "xbox", "name": "Original Xbox",       "emulator": "xemu",         "source": { "type": "github", "repo": "xemu-project/xemu",      "assetPattern": "win.*\\.zip$" }, "exts": ["iso"] },
+    { "id": "x360", "name": "Xbox 360",            "emulator": "Xenia Canary", "source": { "type": "github", "repo": "xenia-canary/xenia-canary-releases", "assetPattern": "windows.*\\.zip$" }, "exts": ["iso", "xex"] },
+    { "id": "arcade","name": "Arcade",             "emulator": "MAME",         "source": { "type": "github", "repo": "mamedev/mame",           "assetPattern": "mame.*64bit.*\\.exe$" }, "exts": ["zip"] }
+  ],
+  "pending": ["Add Switch (Eden), Switch 2 (Lichii, experimental) and the Sega/Atari/NEC/etc. entries from CONSOLES.md once the list is approved. PS5 is watch-only: follow it in the News tab, no install entry."]
+}
