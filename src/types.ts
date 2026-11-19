@@ -152,3 +152,16 @@ export interface NewsPayload {
   sources: NewsSource[];
   watch: WatchDef[];
 }
+
+export interface MusicTrack {
+  file: string;
+  title: string;
+}
+
+export interface MusicPack {
+  id: string;
+  name: string;
+  author: string | null;
+  builtin: boolean;
+  tracks: MusicTrack[];
+}

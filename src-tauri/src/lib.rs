@@ -3,6 +3,7 @@ mod collections;
 mod installer;
 mod launcher;
 mod library;
+mod music;
 mod news;
 mod setup;
 mod registry;
@@ -71,6 +72,11 @@ pub fn run() {
             collections::get_game_details,
             collections::save_overrides,
             installer::check_updates,
+            music::list_music_packs,
+            music::get_track,
+            music::open_music_folder,
+            music::add_music_pack,
+            music::remove_music_pack,
             news::get_news,
             news::open_news_link,
             setup::check_setup,

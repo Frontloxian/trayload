@@ -153,4 +153,15 @@ h1 { margin: 0; font-size: 26px; }
 .link:hover { text-decoration: underline; }
 .link:focus-visible { outline: 2px solid var(--accent); }
 .news-title { display: block; font-weight: 600; margin-bottom: 4px; }
-.row { display: flex; gap: 8px; align-items: center; }
+
+.mini { margin: 8px 4px 4px; padding: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; display: grid; gap: 6px; }
+.mini-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-controls { display: flex; gap: 6px; align-items: center; }
+.icon-btn { background: #1a2342; color: var(--text); border: 1px solid #2a3a6b; border-radius: 8px; width: 32px; height: 28px; font: inherit; cursor: pointer; }
+.icon-btn:hover:not(:disabled) { border-color: var(--accent); }
+.icon-btn:disabled { opacity: .5; cursor: default; }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); }
+.mini input[type="range"], .vol { accent-color: var(--primary); width: 100%; }
+.pack { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.pack label { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+.row.wrap { flex-wrap: wrap; }

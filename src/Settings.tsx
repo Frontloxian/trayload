@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import type { ArtSettings } from "./types";
+import type { Music } from "./useMusic";
 
-export default function Settings() {
+export default function Settings({ music }: { music: Music }) {
   const [hasKey, setHasKey] = useState(false);
   const [key, setKey] = useState("");
   const [folders, setFolders] = useState<string[]>([]);
@@ -76,6 +78,101 @@ export default function Settings() {
             Retry missing covers
           </button>
         </div>
+      </section>
+
+      <section className="section">
+        <h2>Music</h2>
+        <p className="muted">
+          Trayload plays the soundtrack in the background and pauses it while a game runs. A music pack is a folder of
+          audio files (mp3, ogg, opus, wav, flac, m4a). An optional pack.json in the folder can set a name and author,
+          like {"{"}"name": "My pack", "author": "Me"{"}"}. Only use music you have the right to use.
+        </p>
+        <div className="row wrap">
+          <label>
+            <input
+              type="checkbox"
+              checked={music.prefs.enabled}
+              onChange={(e) => music.setPrefs({ enabled: e.target.checked })}
+            />{" "}
+            Play music
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={music.prefs.shuffle}
+              onChange={(e) => music.setPrefs({ shuffle: e.target.checked })}
+            />{" "}
+            Shuffle
+          </label>
+        </div>
+        <div className="row">
+          <input
+            className="vol"
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(music.prefs.volume * 100)}
+            aria-label="Music volume"
+            onChange={(e) => music.setPrefs({ volume: Number(e.target.value) / 100 })}
+          />
+        </div>
+        {music.packs.map((p) => (
+          <div key={p.id} className="pack">
+            <label>
+              <input
+                type="radio"
+                name="music-pack"
+                checked={(music.packs.find((x) => x.id === music.prefs.pack) ?? music.packs[0])?.id === p.id}
+                onChange={() => music.setPrefs({ pack: p.id })}
+              />
+              <span>
+                <strong>{p.name}</strong>
+                <span className="muted small">
+                  {" "}
+                  {p.tracks.length} track{p.tracks.length === 1 ? "" : "s"}
+                  {p.author ? `, by ${p.author}` : ""}
+                </span>
+              </span>
+            </label>
+            {!p.builtin && (
+              <button
+                className="btn danger"
+                onClick={() => {
+                  if (window.confirm(`Remove the pack "${p.name}"? This deletes its copy of the music files.`))
+                    act(async () => {
+                      await invoke("remove_music_pack", { id: p.id });
+                      music.reload();
+                    }, "Pack removed.");
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+        <div className="row wrap">
+          <button
+            className="btn"
+            onClick={() =>
+              act(async () => {
+                const dir = await open({ directory: true });
+                if (typeof dir === "string") {
+                  await invoke("add_music_pack", { path: dir });
+                  music.reload();
+                }
+              }, "Pack added.")
+            }
+          >
+            Add pack from folder
+          </button>
+          <button className="btn" onClick={() => act(() => invoke("open_music_folder"), "Opened the music folder.")}>
+            Open music folder
+          </button>
+          <button className="btn" onClick={() => { music.reload(); setMsg("Packs reloaded."); }}>
+            Reload
+          </button>
+        </div>
+        {music.error && <p className="error small">{music.error}</p>}
       </section>
 
       <section className="section">

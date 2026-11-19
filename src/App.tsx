@@ -5,9 +5,11 @@ import type { Registry, UpdateInfo } from "./types";
 import Emulators from "./Emulators";
 import GameDetail from "./GameDetail";
 import Library from "./Library";
+import MiniPlayer from "./MiniPlayer";
 import News from "./News";
 import Settings from "./Settings";
 import Setup from "./Setup";
+import { useMusic } from "./useMusic";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
@@ -27,6 +29,7 @@ export default function App() {
   const [dragging, setDragging] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [libKey, setLibKey] = useState(0);
+  const music = useMusic();
   const [updates, setUpdates] = useState<UpdateInfo[]>([]);
 
   const checkUpdates = () => {
@@ -87,6 +90,7 @@ export default function App() {
           </button>
         ))}
         <div className="spacer" />
+        <MiniPlayer music={music} />
         <button className="nav" aria-current={page === "settings" ? "page" : undefined} onClick={() => setPage("settings")}>
           Settings
         </button>
@@ -122,7 +126,7 @@ export default function App() {
         ) : page === "news" ? (
           <News updates={updates} onEmulators={() => setPage("emulators")} />
         ) : page === "settings" ? (
-          <Settings />
+          <Settings music={music} />
         ) : (
           <p className="muted">Coming in a later milestone.</p>
         )}
