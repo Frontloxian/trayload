@@ -39,6 +39,9 @@ pub struct System {
     /// Empty file created next to the .exe so the emulator keeps its data in its own folder.
     #[serde(rename = "portableMarker", default)]
     pub portable_marker: Option<String>,
+    /// Command-line arguments to start a game. The element "{rom}" is replaced by the game path.
+    #[serde(rename = "launchArgs", default)]
+    pub launch_args: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

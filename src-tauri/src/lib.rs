@@ -1,4 +1,5 @@
 mod installer;
+mod launcher;
 mod library;
 mod registry;
 
@@ -16,8 +17,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(installer::Installing::default())
         .manage(library::LastScan::default())
+        .manage(launcher::Running::default())
         .setup(|app| {
             let db = library::open(app.handle())?;
+            launcher::recover_sessions(&db)?;
             app.manage(db.clone());
             // Scan the ROM folders once at every launch, in the background.
             let handle = app.handle().clone();
@@ -46,6 +49,8 @@ pub fn run() {
             library::assign_system,
             library::dismiss_unassigned,
             library::remove_game,
+            launcher::play_game,
+            launcher::running_games,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Trayload");

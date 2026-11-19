@@ -39,6 +39,13 @@ CREATE TABLE IF NOT EXISTS unassigned (
   candidates TEXT NOT NULL,
   dismissed INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS play_sessions (
+  id INTEGER PRIMARY KEY,
+  game_id INTEGER NOT NULL,
+  started_at INTEGER NOT NULL,
+  ended_at INTEGER NOT NULL,
+  completed INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

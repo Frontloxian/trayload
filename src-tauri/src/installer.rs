@@ -84,14 +84,14 @@ fn emulators_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(data_dir(app)?.join("emulators"))
 }
 
-fn emu_dir(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
+pub fn emu_dir(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
     if !valid_id(id) {
         return Err("invalid emulator id".into());
     }
     Ok(emulators_dir(app)?.join(id))
 }
 
-fn read_installed(dir: &Path) -> Option<InstalledInfo> {
+pub fn read_installed(dir: &Path) -> Option<InstalledInfo> {
     let text = fs::read_to_string(dir.join(".trayload.json")).ok()?;
     serde_json::from_str(&text).ok()
 }

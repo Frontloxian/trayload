@@ -45,7 +45,10 @@
     "gbc"
    ],
    "exePattern": "^mgba\\.exe$",
-   "portableMarker": "portable.ini"
+   "portableMarker": "portable.ini",
+   "launchArgs": [
+    "{rom}"
+   ]
   },
   {
    "id": "gba",
@@ -60,7 +63,10 @@
     "gba"
    ],
    "exePattern": "^mgba\\.exe$",
-   "portableMarker": "portable.ini"
+   "portableMarker": "portable.ini",
+   "launchArgs": [
+    "{rom}"
+   ]
   },
   {
    "id": "n64",
@@ -122,7 +128,12 @@
     "gcz"
    ],
    "exePattern": "^dolphin\\.exe$",
-   "portableMarker": "portable.txt"
+   "portableMarker": "portable.txt",
+   "launchArgs": [
+    "-b",
+    "-e",
+    "{rom}"
+   ]
   },
   {
    "id": "wii",
@@ -140,7 +151,12 @@
     "wad"
    ],
    "exePattern": "^dolphin\\.exe$",
-   "portableMarker": "portable.txt"
+   "portableMarker": "portable.txt",
+   "launchArgs": [
+    "-b",
+    "-e",
+    "{rom}"
+   ]
   },
   {
    "id": "wiiu",
@@ -174,7 +190,12 @@
     "pbp"
    ],
    "exePattern": "^duckstation-qt.*\\.exe$",
-   "portableMarker": "portable.txt"
+   "portableMarker": "portable.txt",
+   "launchArgs": [
+    "-batch",
+    "--",
+    "{rom}"
+   ]
   },
   {
    "id": "ps2",

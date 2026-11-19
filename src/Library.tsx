@@ -14,6 +14,12 @@ function describe(s: ScanSummary): string {
   return parts.length ? parts.join(", ") : "Library up to date";
 }
 
+function playtime(sec: number): string {
+  if (sec < 60) return "";
+  const m = Math.floor(sec / 60);
+  return m < 60 ? `${m} min played` : `${Math.floor(m / 60)}h ${m % 60}m played`;
+}
+
 function hue(text: string): number {
   let h = 0;
   for (const c of text) h = (h * 31 + c.charCodeAt(0)) % 360;
@@ -35,6 +41,7 @@ export default function Library({ systems }: { systems: System[] }) {
   const [review, setReview] = useState(false);
   const [choice, setChoice] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState<Set<number>>(new Set());
 
   const names = useMemo(() => Object.fromEntries(systems.map((s) => [s.id, s.name])), [systems]);
   const exts = useMemo(() => Array.from(new Set(systems.flatMap((s) => s.exts))).sort(), [systems]);
@@ -47,12 +54,26 @@ export default function Library({ systems }: { systems: System[] }) {
   useEffect(() => {
     refresh();
     invoke<ScanSummary | null>("last_scan").then((s) => s && setSummary(describe(s)));
+    invoke<number[]>("running_games").then((ids) => setRunning(new Set(ids)));
     const un = listen<ScanSummary>("library-changed", (e) => {
       setSummary(describe(e.payload));
       refresh();
     });
+    const u1 = listen<{ gameId: number }>("game-started", (e) =>
+      setRunning((r) => new Set(r).add(e.payload.gameId)),
+    );
+    const u2 = listen<{ gameId: number }>("game-stopped", (e) => {
+      setRunning((r) => {
+        const n = new Set(r);
+        n.delete(e.payload.gameId);
+        return n;
+      });
+      refresh();
+    });
     return () => {
       un.then((f) => f());
+      u1.then((f) => f());
+      u2.then((f) => f());
     };
   }, [refresh]);
 
@@ -82,6 +103,11 @@ export default function Library({ systems }: { systems: System[] }) {
     });
 
   const rescan = () => run(() => invoke("rescan"));
+
+  const play = (g: Game) => {
+    setError(null);
+    invoke("play_game", { id: g.id }).catch((e) => setError(String(e)));
+  };
 
   const removeGame = (g: Game) => {
     if (!window.confirm(`Remove "${g.title}" from the library?\n\nThe game file itself is not deleted.`)) return;
@@ -204,17 +230,28 @@ export default function Library({ systems }: { systems: System[] }) {
               const h = hue(g.title);
               return (
                 <li key={g.id} className="tile">
-                  <div
-                    className="cover"
-                    style={{ background: `linear-gradient(135deg, hsl(${h} 55% 34%), hsl(${(h + 40) % 360} 55% 16%))` }}
+                  <button
+                    className="cover-btn"
+                    onClick={() => play(g)}
+                    disabled={running.has(g.id)}
+                    aria-label={`Play ${g.title}`}
                   >
-                    <span>{initials(g.title)}</span>
-                    {g.missing && <em className="badge">Missing</em>}
-                  </div>
+                    <div
+                      className="cover"
+                      style={{ background: `linear-gradient(135deg, hsl(${h} 55% 34%), hsl(${(h + 40) % 360} 55% 16%))` }}
+                    >
+                      <span>{initials(g.title)}</span>
+                      {g.missing && <em className="badge">Missing</em>}
+                      {running.has(g.id) ? <em className="badge live">Playing</em> : <i className="play">▶ Play</i>}
+                    </div>
+                  </button>
                   <div className="tile-title" title={g.path}>
                     {g.title}
                   </div>
-                  <div className="muted small">{names[g.systemId] ?? g.systemId}</div>
+                  <div className="muted small">
+                    {names[g.systemId] ?? g.systemId}
+                    {playtime(g.totalPlaytimeSec) && ` · ${playtime(g.totalPlaytimeSec)}`}
+                  </div>
                   <button className="tile-remove" onClick={() => removeGame(g)} aria-label={`Remove ${g.title} from library`}>
                     Remove
                   </button>

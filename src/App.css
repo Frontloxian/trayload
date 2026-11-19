@@ -68,3 +68,10 @@ h1 { margin: 0; font-size: 26px; }
 .tile:hover .tile-remove, .tile-remove:focus-visible { opacity: 1; }
 .dropzone { position: fixed; inset: 0; background: #0b1020e6; display: grid; place-items: center; pointer-events: none; z-index: 10; }
 .dropzone > div { border: 3px dashed var(--accent); border-radius: 20px; padding: 48px 64px; font-size: 22px; color: var(--accent); }
+
+.cover-btn { all: unset; display: block; width: 100%; cursor: pointer; border-radius: 10px; }
+.cover-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cover-btn:disabled { cursor: default; }
+.play { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-style: normal; font-size: 13px; background: var(--primary); color: #fff; padding: 5px 14px; border-radius: 999px; opacity: 0; transition: opacity .12s; }
+.cover-btn:hover .play, .cover-btn:focus-visible .play { opacity: 1; }
+.badge.live { background: #0f3a2a; color: #6ee7b0; }
