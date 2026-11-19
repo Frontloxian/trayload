@@ -37,3 +37,31 @@ export interface InstallProgress {
   downloaded: number;
   total: number;
 }
+
+export interface Game {
+  id: number;
+  systemId: string;
+  title: string;
+  path: string;
+  size: number;
+  addedAt: number;
+  lastPlayed: number | null;
+  totalPlaytimeSec: number;
+  favorite: boolean;
+  missing: boolean;
+}
+
+export interface Unassigned {
+  path: string;
+  fileName: string;
+  candidates: string[];
+}
+
+export interface ScanSummary {
+  added: number;
+  updated: number;
+  unchanged: number;
+  unassigned: number;
+  restored: number;
+  missing: number;
+}
