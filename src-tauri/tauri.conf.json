@@ -15,12 +15,16 @@
         "title": "Trayload",
         "width": 1280,
         "height": 800,
-        "minWidth": 1000,
+        "minWidth": 800,
         "minHeight": 640
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$LOCALAPPDATA/com.loxianthepeak.trayload/art/**"]
+      }
     }
   },
   "bundle": {

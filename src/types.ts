@@ -49,6 +49,11 @@ export interface Game {
   totalPlaytimeSec: number;
   favorite: boolean;
   missing: boolean;
+  artPath: string | null;
+}
+
+export interface ArtSettings {
+  hasSteamgriddbKey: boolean;
 }
 
 export interface Unassigned {

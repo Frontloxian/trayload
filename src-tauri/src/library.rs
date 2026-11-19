@@ -71,6 +71,7 @@ pub struct Game {
     total_playtime_sec: i64,
     favorite: bool,
     missing: bool,
+    art_path: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -104,11 +105,27 @@ fn unix_now() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
+/// Schema upgrades after the first release of the tables, tracked by PRAGMA user_version.
+fn migrate(conn: &Connection) -> Result<(), String> {
+    let v: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0)).map_err(e)?;
+    if v < 1 {
+        conn.execute_batch(
+            "ALTER TABLE games ADD COLUMN art_source TEXT;
+             ALTER TABLE games ADD COLUMN art_tried_at INTEGER;
+             ALTER TABLE games ADD COLUMN art_file TEXT;
+             PRAGMA user_version = 1;",
+        )
+        .map_err(e)?;
+    }
+    Ok(())
+}
+
 pub fn open(app: &AppHandle) -> Result<Db, String> {
     let dir = app.path().app_local_data_dir().map_err(e)?;
     fs::create_dir_all(&dir).map_err(e)?;
     let conn = Connection::open(dir.join("library.db")).map_err(e)?;
     conn.execute_batch(SCHEMA).map_err(e)?;
+    migrate(&conn)?;
     Ok(Db(Arc::new(Mutex::new(conn))))
 }
 
@@ -445,7 +462,7 @@ pub fn list_games(db: tauri::State<'_, Db>) -> Result<Vec<Game>, String> {
     let conn = lock(&db)?;
     let mut st = conn
         .prepare(
-            "SELECT id, system_id, title, path, size, added_at, last_played, total_playtime_sec, favorite, missing
+            "SELECT id, system_id, title, path, size, added_at, last_played, total_playtime_sec, favorite, missing, art_file
              FROM games WHERE removed = 0 ORDER BY title COLLATE NOCASE",
         )
         .map_err(e)?;
@@ -462,6 +479,7 @@ pub fn list_games(db: tauri::State<'_, Db>) -> Result<Vec<Game>, String> {
                 total_playtime_sec: r.get(7)?,
                 favorite: r.get::<_, i64>(8)? != 0,
                 missing: r.get::<_, i64>(9)? != 0,
+                art_path: r.get(10)?,
             })
         })
         .map_err(e)?;

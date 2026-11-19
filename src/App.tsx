@@ -4,6 +4,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Registry } from "./types";
 import Emulators from "./Emulators";
 import Library from "./Library";
+import Settings from "./Settings";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
@@ -79,6 +80,8 @@ export default function App() {
           <Emulators />
         ) : page === "library" ? (
           <Library systems={registry?.systems ?? []} />
+        ) : page === "settings" ? (
+          <Settings />
         ) : (
           <p className="muted">Coming in a later milestone.</p>
         )}

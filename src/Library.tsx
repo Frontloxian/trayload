@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { Game, ScanSummary, System, Unassigned } from "./types";
@@ -70,10 +70,17 @@ export default function Library({ systems }: { systems: System[] }) {
       });
       refresh();
     });
+    let t: number | undefined;
+    const u3 = listen("art-updated", () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(refresh, 800);
+    });
     return () => {
+      window.clearTimeout(t);
       un.then((f) => f());
       u1.then((f) => f());
       u2.then((f) => f());
+      u3.then((f) => f());
     };
   }, [refresh]);
 
@@ -108,6 +115,15 @@ export default function Library({ systems }: { systems: System[] }) {
     setError(null);
     invoke("play_game", { id: g.id }).catch((e) => setError(String(e)));
   };
+
+  const pickCover = (g: Game) =>
+    run(async () => {
+      const f = await open({
+        multiple: false,
+        filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
+      });
+      if (typeof f === "string") await invoke("set_art_from_file", { id: g.id, path: f });
+    });
 
   const removeGame = (g: Game) => {
     if (!window.confirm(`Remove "${g.title}" from the library?\n\nThe game file itself is not deleted.`)) return;
@@ -240,7 +256,11 @@ export default function Library({ systems }: { systems: System[] }) {
                       className="cover"
                       style={{ background: `linear-gradient(135deg, hsl(${h} 55% 34%), hsl(${(h + 40) % 360} 55% 16%))` }}
                     >
-                      <span>{initials(g.title)}</span>
+                      {g.artPath ? (
+                        <img className="cover-img" src={convertFileSrc(g.artPath)} alt="" loading="lazy" />
+                      ) : (
+                        <span>{initials(g.title)}</span>
+                      )}
                       {g.missing && <em className="badge">Missing</em>}
                       {running.has(g.id) ? <em className="badge live">Playing</em> : <i className="play">▶ Play</i>}
                     </div>
@@ -254,6 +274,9 @@ export default function Library({ systems }: { systems: System[] }) {
                   </div>
                   <button className="tile-remove" onClick={() => removeGame(g)} aria-label={`Remove ${g.title} from library`}>
                     Remove
+                  </button>
+                  <button className="tile-cover" onClick={() => pickCover(g)} aria-label={`Choose a cover for ${g.title}`}>
+                    Cover…
                   </button>
                 </li>
               );

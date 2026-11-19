@@ -42,6 +42,9 @@ pub struct System {
     /// Command-line arguments to start a game. The element "{rom}" is replaced by the game path.
     #[serde(rename = "launchArgs", default)]
     pub launch_args: Option<Vec<String>>,
+    /// libretro-thumbnails repository names for this system's box art.
+    #[serde(rename = "artRepos", default)]
+    pub art_repos: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

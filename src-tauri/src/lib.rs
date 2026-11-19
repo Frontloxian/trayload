@@ -1,3 +1,4 @@
+mod art;
 mod installer;
 mod launcher;
 mod library;
@@ -24,6 +25,7 @@ pub fn run() {
             app.manage(db.clone());
             // Scan the ROM folders once at every launch, in the background.
             let handle = app.handle().clone();
+            tauri::async_runtime::spawn(art::worker(handle.clone(), db.clone()));
             std::thread::spawn(move || {
                 if let Err(err) = library::rescan_blocking(&handle, &db) {
                     eprintln!("[scan] {err}");
@@ -51,6 +53,10 @@ pub fn run() {
             library::remove_game,
             launcher::play_game,
             launcher::running_games,
+            art::get_art_settings,
+            art::set_steamgriddb_key,
+            art::retry_art,
+            art::set_art_from_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Trayload");
