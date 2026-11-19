@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Registry } from "./types";
+import Emulators from "./Emulators";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
@@ -47,15 +48,7 @@ export default function App() {
         {error && <p className="error">Registry failed to load: {error}</p>}
 
         {page === "emulators" ? (
-          <ul className="list">
-            {registry?.systems.map((s) => (
-              <li key={s.id}>
-                <strong>{s.name}</strong>
-                <span>{s.emulator}</span>
-                <code>{s.exts.map((e) => "." + e).join(" ")}</code>
-              </li>
-            ))}
-          </ul>
+          <Emulators />
         ) : (
           <p className="muted">
             Milestone 0 placeholder. Registry loaded: {registry ? `${registry.systems.length} systems` : "…"}.

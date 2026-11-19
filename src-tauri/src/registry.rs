@@ -33,6 +33,12 @@ pub struct System {
     pub emulator: String,
     pub source: Source,
     pub exts: Vec<String>,
+    /// Case-insensitive regex for the emulator's main .exe file name.
+    #[serde(rename = "exePattern", default)]
+    pub exe_pattern: Option<String>,
+    /// Empty file created next to the .exe so the emulator keeps its data in its own folder.
+    #[serde(rename = "portableMarker", default)]
+    pub portable_marker: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
