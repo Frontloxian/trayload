@@ -17,6 +17,9 @@ pub enum Source {
         repo: String,
         #[serde(rename = "assetPattern")]
         asset_pattern: String,
+        /// Optional regex run on the asset name. Its first capture group becomes the version label.
+        #[serde(rename = "versionRegex", default)]
+        version_regex: Option<String>,
     },
     /// Vendor download page (resolved later by the installer).
     Page {
@@ -115,6 +118,55 @@ mod tests {
         let r = parse(EMBEDDED).expect("embedded registry must parse");
         assert!(!r.systems.is_empty());
         assert!(r.systems.iter().all(|s| !s.id.is_empty() && !s.exts.is_empty()));
+    }
+
+    #[test]
+    fn registry_entries_are_well_formed() {
+        use regex::Regex;
+        use std::path::{Component, Path};
+        let r = parse(EMBEDDED).unwrap();
+        for s in &r.systems {
+            if let Some(p) = &s.exe_pattern {
+                assert!(Regex::new(p).is_ok(), "bad exePattern for {}", s.id);
+            }
+            match &s.source {
+                Source::Github { asset_pattern, version_regex, .. } => {
+                    assert!(Regex::new(asset_pattern).is_ok(), "bad assetPattern for {}", s.id);
+                    if let Some(v) = version_regex {
+                        assert!(Regex::new(v).is_ok(), "bad versionRegex for {}", s.id);
+                    }
+                }
+                Source::Page { asset_pattern: Some(p), .. } => {
+                    assert!(Regex::new(p).is_ok(), "bad assetPattern for {}", s.id);
+                }
+                _ => {}
+            }
+            if let Some(a) = &s.launch_args {
+                assert_eq!(a.iter().filter(|x| *x == "{rom}").count(), 1, "launchArgs of {} needs one {{rom}}", s.id);
+            }
+            if let Some(m) = &s.portable_marker {
+                let t = m.trim_end_matches('/');
+                assert!(!t.is_empty() && Path::new(t).components().all(|c| matches!(c, Component::Normal(_))));
+            }
+        }
+    }
+
+    #[test]
+    fn systems_sharing_an_emulator_agree() {
+        let r = parse(EMBEDDED).unwrap();
+        let mut seen: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        for s in &r.systems {
+            let key = crate::installer::slug(&s.emulator);
+            let sig = format!(
+                "{}|{:?}|{:?}",
+                serde_json::to_string(&s.source).unwrap(),
+                s.exe_pattern,
+                s.portable_marker
+            );
+            if let Some(prev) = seen.insert(key.clone(), sig.clone()) {
+                assert_eq!(prev, sig, "systems sharing {key} must have the same source, exePattern and marker");
+            }
+        }
     }
 
     #[test]

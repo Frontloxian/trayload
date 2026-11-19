@@ -139,6 +139,51 @@ struct Resolved {
     version: String,
 }
 
+/// A readable version label: from the asset name if the registry says how, else the release tag.
+/// Rolling releases ("continuous", "latest", "nightly") use their publish date instead.
+fn pick_version(tag: &str, published: Option<&str>, asset: &str, regex: Option<&str>) -> String {
+    if let Some(pat) = regex {
+        if let Ok(re) = regex::Regex::new(pat) {
+            if let Some(m) = re.captures(asset).and_then(|c| c.get(1)) {
+                return m.as_str().to_string();
+            }
+        }
+    }
+    if matches!(tag, "continuous" | "latest" | "nightly") {
+        if let Some(p) = published {
+            return p.chars().take(10).collect();
+        }
+    }
+    tag.to_string()
+}
+
+/// Lists the .exe files in an extracted emulator, to make a wrong exePattern easy to fix.
+fn exe_not_found(root: &Path) -> String {
+    let mut found = vec![];
+    let mut stack = vec![(root.to_path_buf(), 0usize)];
+    while let Some((dir, depth)) = stack.pop() {
+        let Ok(rd) = fs::read_dir(&dir) else { continue };
+        for e in rd.flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                if depth < 2 {
+                    stack.push((p, depth + 1));
+                }
+            } else if p.extension().and_then(|x| x.to_str()).map(|x| x.eq_ignore_ascii_case("exe")).unwrap_or(false) {
+                if let Ok(rel) = p.strip_prefix(root) {
+                    found.push(rel.to_string_lossy().to_string());
+                }
+            }
+        }
+    }
+    found.sort();
+    found.truncate(15);
+    format!(
+        "Extracted fine, but the emulator's program was not found (exePattern). The .exe files in the download are: {}",
+        if found.is_empty() { "none".to_string() } else { found.join(", ") }
+    )
+}
+
 fn from_link(link: &str) -> Resolved {
     let file_name = link.rsplit('/').next().unwrap_or("download").to_string();
     let version = file_name.trim_end_matches(".7z").trim_end_matches(".zip").to_string();
@@ -169,7 +214,7 @@ async fn resolve_page(client: &reqwest::Client, url: &str, pat: &str) -> Result<
 
 async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, String> {
     match src {
-        Source::Github { repo, asset_pattern } => {
+        Source::Github { repo, asset_pattern, version_regex } => {
             let re = RegexBuilder::new(asset_pattern)
                 .case_insensitive(true)
                 .build()
@@ -187,6 +232,7 @@ async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, Str
                 .await
                 .map_err(|e| format!("could not read GitHub's answer: {e}"))?;
             let tag = rel["tag_name"].as_str().unwrap_or("unknown").to_string();
+            let published = rel["published_at"].as_str().map(|s| s.to_string());
             let assets = rel["assets"].as_array().ok_or("release has no assets")?;
             let mut names = vec![];
             for a in assets {
@@ -194,7 +240,8 @@ async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, Str
                 names.push(name.to_string());
                 if re.is_match(name) {
                     let dl = a["browser_download_url"].as_str().ok_or("asset has no download URL")?;
-                    return Ok(Resolved { url: dl.into(), file_name: name.into(), version: tag });
+                    let version = pick_version(&tag, published.as_deref(), name, version_regex.as_deref());
+                    return Ok(Resolved { url: dl.into(), file_name: name.into(), version });
                 }
             }
             Err(format!(
@@ -443,11 +490,18 @@ async fn do_install(app: &AppHandle, id: &str) -> Result<InstalledInfo, String> 
             extract(&archive2, &staging)?;
             verify_tree(&staging)?;
             let root = content_root(&staging)?;
-            let exe = find_exe(&root, &exe_re)
-                .ok_or("extracted fine, but the emulator's .exe was not found (check exePattern)")?;
+            let exe = find_exe(&root, &exe_re).ok_or_else(|| exe_not_found(&root))?;
             if let Some(marker) = &portable {
-                if let Some(parent) = exe.parent() {
-                    fs::write(parent.join(marker), b"").map_err(|e| e.to_string())?;
+                // A name ending in "/" is a folder (for example "user/"), otherwise an empty file.
+                let name = marker.trim_end_matches('/');
+                let safe = !name.is_empty()
+                    && Path::new(name).components().all(|c| matches!(c, std::path::Component::Normal(_)));
+                if let (true, Some(parent)) = (safe, exe.parent()) {
+                    if marker.ends_with('/') {
+                        fs::create_dir_all(parent.join(name)).map_err(|e| e.to_string())?;
+                    } else {
+                        fs::write(parent.join(name), b"").map_err(|e| e.to_string())?;
+                    }
                 }
             }
             let rel = exe.strip_prefix(&root).map_err(|e| e.to_string())?.to_string_lossy().to_string();

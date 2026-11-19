@@ -8,7 +8,7 @@
    "source": {
     "type": "github",
     "repo": "SourMesen/Mesen2",
-    "assetPattern": "Windows.*\\.zip$"
+    "assetPattern": "Windows\\.zip$"
    },
    "exts": [
     "nes",
@@ -17,6 +17,10 @@
    ],
    "artRepos": [
     "Nintendo_-_Nintendo_Entertainment_System"
+   ],
+   "exePattern": "^Mesen\\.exe$",
+   "launchArgs": [
+    "{rom}"
    ]
   },
   {
@@ -26,7 +30,7 @@
    "source": {
     "type": "github",
     "repo": "SourMesen/Mesen2",
-    "assetPattern": "Windows.*\\.zip$"
+    "assetPattern": "Windows\\.zip$"
    },
    "exts": [
     "sfc",
@@ -35,6 +39,10 @@
    ],
    "artRepos": [
     "Nintendo_-_Super_Nintendo_Entertainment_System"
+   ],
+   "exePattern": "^Mesen\\.exe$",
+   "launchArgs": [
+    "{rom}"
    ]
   },
   {
@@ -88,7 +96,7 @@
    "source": {
     "type": "github",
     "repo": "Rosalie241/RMG",
-    "assetPattern": "Windows.*portable.*\\.zip$"
+    "assetPattern": "Portable-Windows64.*\\.zip$"
    },
    "exts": [
     "z64",
@@ -97,6 +105,10 @@
    ],
    "artRepos": [
     "Nintendo_-_Nintendo_64"
+   ],
+   "exePattern": "^RMG\\.exe$",
+   "launchArgs": [
+    "{rom}"
    ]
   },
   {
@@ -106,7 +118,7 @@
    "source": {
     "type": "github",
     "repo": "melonDS-emu/melonDS",
-    "assetPattern": "win.*x86_64.*\\.zip$"
+    "assetPattern": "windows-x86_64\\.zip$"
    },
    "exts": [
     "nds",
@@ -114,6 +126,10 @@
    ],
    "artRepos": [
     "Nintendo_-_Nintendo_DS"
+   ],
+   "exePattern": "^melonDS\\.exe$",
+   "launchArgs": [
+    "{rom}"
    ]
   },
   {
@@ -123,7 +139,7 @@
    "source": {
     "type": "github",
     "repo": "azahar-emu/azahar",
-    "assetPattern": "windows.*\\.zip$"
+    "assetPattern": "azahar-windows-msvc-[\\d.]+\\.zip$"
    },
    "exts": [
     "3ds",
@@ -132,7 +148,12 @@
    ],
    "artRepos": [
     "Nintendo_-_Nintendo_3DS"
-   ]
+   ],
+   "exePattern": "^azahar(-qt)?\\.exe$",
+   "launchArgs": [
+    "{rom}"
+   ],
+   "portableMarker": "user/"
   },
   {
    "id": "gc",
@@ -208,7 +229,7 @@
    "source": {
     "type": "github",
     "repo": "cemu-project/Cemu",
-    "assetPattern": "windows-x64.*\\.zip$"
+    "assetPattern": "windows-x64\\.zip$"
    },
    "exts": [
     "wud",
@@ -218,7 +239,13 @@
    ],
    "artRepos": [
     "Nintendo_-_Wii_U"
-   ]
+   ],
+   "exePattern": "^Cemu\\.exe$",
+   "launchArgs": [
+    "-g",
+    "{rom}"
+   ],
+   "portableMarker": "portable/"
   },
   {
    "id": "ps1",
@@ -267,7 +294,7 @@
    "source": {
     "type": "github",
     "repo": "PCSX2/pcsx2",
-    "assetPattern": "windows.*x64.*\\.7z$"
+    "assetPattern": "windows-x64-Qt\\.7z$"
    },
    "exts": [
     "iso",
@@ -290,7 +317,14 @@
       "note": "A 4 MB .bin file. Pick one that matches your games' region."
      }
     ]
-   }
+   },
+   "exePattern": "^pcsx2-qt\\.exe$",
+   "launchArgs": [
+    "-batch",
+    "--",
+    "{rom}"
+   ],
+   "portableMarker": "portable.txt"
   },
   {
    "id": "ps3",
@@ -299,7 +333,8 @@
    "source": {
     "type": "github",
     "repo": "RPCS3/rpcs3-binaries-win",
-    "assetPattern": "win64.*\\.7z$"
+    "assetPattern": "win64_msvc\\.7z$",
+    "versionRegex": "rpcs3-(v[\\d.]+-\\d+)"
    },
    "exts": [
     "iso",
@@ -307,6 +342,11 @@
    ],
    "artRepos": [
     "Sony_-_PlayStation_3"
+   ],
+   "exePattern": "^rpcs3\\.exe$",
+   "launchArgs": [
+    "--no-gui",
+    "{rom}"
    ]
   },
   {
@@ -333,14 +373,15 @@
    "source": {
     "type": "github",
     "repo": "Vita3K/Vita3K",
-    "assetPattern": "windows.*\\.zip$"
+    "assetPattern": "^windows-latest\\.zip$"
    },
    "exts": [
     "vpk"
    ],
    "artRepos": [
     "Sony_-_PlayStation_Vita"
-   ]
+   ],
+   "exePattern": "^Vita3K\\.exe$"
   },
   {
    "id": "dc",
@@ -349,7 +390,7 @@
    "source": {
     "type": "github",
     "repo": "flyinghead/flycast",
-    "assetPattern": "win.*\\.zip$"
+    "assetPattern": "flycast-win64-.*\\.zip$"
    },
    "exts": [
     "gdi",
@@ -380,7 +421,12 @@
       ]
      }
     ]
-   }
+   },
+   "exePattern": "^flycast\\.exe$",
+   "launchArgs": [
+    "{rom}"
+   ],
+   "portableMarker": "data/"
   },
   {
    "id": "xbox",
@@ -389,13 +435,18 @@
    "source": {
     "type": "github",
     "repo": "xemu-project/xemu",
-    "assetPattern": "win.*\\.zip$"
+    "assetPattern": "^xemu-win-x86_64-release\\.zip$"
    },
    "exts": [
     "iso"
    ],
    "artRepos": [
     "Microsoft_-_Xbox"
+   ],
+   "exePattern": "^xemu\\.exe$",
+   "launchArgs": [
+    "-dvd_path",
+    "{rom}"
    ]
   },
   {
@@ -413,7 +464,12 @@
    ],
    "artRepos": [
     "Microsoft_-_Xbox_360"
-   ]
+   ],
+   "exePattern": "^xenia_canary\\.exe$",
+   "launchArgs": [
+    "{rom}"
+   ],
+   "portableMarker": "portable.txt"
   },
   {
    "id": "arcade",
