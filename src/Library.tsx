@@ -1,8 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
-import type { Game, ScanSummary, System, Unassigned } from "./types";
+import GameTile from "./GameTile";
+import type { Collection, Game, Membership, ScanSummary, System, Unassigned } from "./types";
+
+type SortKey = "title" | "added" | "played" | "time";
+
+const SORTS: { id: SortKey; label: string }[] = [
+  { id: "title", label: "Title A to Z" },
+  { id: "added", label: "Recently added" },
+  { id: "played", label: "Last played" },
+  { id: "time", label: "Most played" },
+];
+
+const COMPARE: Record<SortKey, (a: Game, b: Game) => number> = {
+  title: (a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }),
+  added: (a, b) => b.addedAt - a.addedAt,
+  played: (a, b) => (b.lastPlayed ?? 0) - (a.lastPlayed ?? 0),
+  time: (a, b) => b.totalPlaytimeSec - a.totalPlaytimeSec,
+};
 
 function describe(s: ScanSummary): string {
   const parts: string[] = [];
@@ -14,41 +31,38 @@ function describe(s: ScanSummary): string {
   return parts.length ? parts.join(", ") : "Library up to date";
 }
 
-function playtime(sec: number): string {
-  if (sec < 60) return "";
-  const m = Math.floor(sec / 60);
-  return m < 60 ? `${m} min played` : `${Math.floor(m / 60)}h ${m % 60}m played`;
+interface Props {
+  systems: System[];
+  refreshKey: number;
+  onOpen: (id: number) => void;
 }
 
-function hue(text: string): number {
-  let h = 0;
-  for (const c of text) h = (h * 31 + c.charCodeAt(0)) % 360;
-  return h;
-}
-
-function initials(title: string): string {
-  const words = title.replace(/\(.*?\)|\[.*?\]/g, "").split(/\s+/).filter(Boolean);
-  return (words[0]?.[0] ?? "?").toUpperCase() + (words[1]?.[0] ?? "").toUpperCase();
-}
-
-export default function Library({ systems }: { systems: System[] }) {
+export default function Library({ systems, refreshKey, onOpen }: Props) {
   const [games, setGames] = useState<Game[]>([]);
   const [unassigned, setUnassigned] = useState<Unassigned[]>([]);
-  const [summary, setSummary] = useState<string>("");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [members, setMembers] = useState<Membership[]>([]);
+  const [summary, setSummary] = useState("");
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<string>("all");
+  const [view, setView] = useState("all");
+  const [sort, setSort] = useState<SortKey>("title");
   const [busy, setBusy] = useState(false);
   const [review, setReview] = useState(false);
   const [choice, setChoice] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState<Set<number>>(new Set());
+  const [newName, setNewName] = useState("");
+  const [renaming, setRenaming] = useState<string | null>(null);
 
   const names = useMemo(() => Object.fromEntries(systems.map((s) => [s.id, s.name])), [systems]);
   const exts = useMemo(() => Array.from(new Set(systems.flatMap((s) => s.exts))).sort(), [systems]);
 
   const refresh = useCallback(() => {
-    invoke<Game[]>("list_games").then(setGames).catch((e) => setError(String(e)));
-    invoke<Unassigned[]>("list_unassigned").then(setUnassigned).catch((e) => setError(String(e)));
+    const fail = (e: unknown) => setError(String(e));
+    invoke<Game[]>("list_games").then(setGames).catch(fail);
+    invoke<Unassigned[]>("list_unassigned").then(setUnassigned).catch(fail);
+    invoke<Collection[]>("list_collections").then(setCollections).catch(fail);
+    invoke<Membership[]>("list_collection_members").then(setMembers).catch(fail);
   }, []);
 
   useEffect(() => {
@@ -84,6 +98,11 @@ export default function Library({ systems }: { systems: System[] }) {
     };
   }, [refresh]);
 
+  // Coming back from a game's page: pick up favorites, collections and playtime it may have changed.
+  useEffect(() => {
+    if (refreshKey > 0) refresh();
+  }, [refreshKey, refresh]);
+
   async function run(fn: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
@@ -116,29 +135,87 @@ export default function Library({ systems }: { systems: System[] }) {
     invoke("play_game", { id: g.id }).catch((e) => setError(String(e)));
   };
 
-  const pickCover = (g: Game) =>
+  const toggleFavorite = (g: Game) =>
+    run(() => invoke("set_favorite", { id: g.id, favorite: !g.favorite }));
+
+  // ----- collections -----
+  const selectedCollection = collections.find((c) => view === `c:${c.id}`);
+
+  const createCollection = () =>
     run(async () => {
-      const f = await open({
-        multiple: false,
-        filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
-      });
-      if (typeof f === "string") await invoke("set_art_from_file", { id: g.id, path: f });
+      const id = await invoke<number>("create_collection", { name: newName });
+      setNewName("");
+      setView(`c:${id}`);
     });
 
-  const removeGame = (g: Game) => {
-    if (!window.confirm(`Remove "${g.title}" from the library?\n\nThe game file itself is not deleted.`)) return;
-    run(() => invoke("remove_game", { id: g.id }));
+  const renameCollection = () =>
+    run(async () => {
+      if (!selectedCollection || renaming === null) return;
+      await invoke("rename_collection", { id: selectedCollection.id, name: renaming });
+      setRenaming(null);
+    });
+
+  const deleteCollection = () => {
+    if (!selectedCollection) return;
+    if (!window.confirm(`Delete the collection "${selectedCollection.name}"?\n\nThe games in it stay in your library.`)) return;
+    run(async () => {
+      await invoke("delete_collection", { id: selectedCollection.id });
+      setView("all");
+    });
   };
 
-  const counts = useMemo(() => {
+  // ----- views -----
+  const memberSets = useMemo(() => {
+    const m = new Map<number, Set<number>>();
+    for (const x of members) {
+      if (!m.has(x.collectionId)) m.set(x.collectionId, new Set());
+      m.get(x.collectionId)!.add(x.gameId);
+    }
+    return m;
+  }, [members]);
+
+  const sysCounts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const g of games) m[g.systemId] = (m[g.systemId] ?? 0) + 1;
     return m;
   }, [games]);
 
-  const shown = games.filter(
-    (g) =>
-      (filter === "all" || g.systemId === filter) && g.title.toLowerCase().includes(query.trim().toLowerCase()),
+  const favCount = games.filter((g) => g.favorite).length;
+  const fixedOrder = view === "recent" || view === "most";
+
+  const shown = useMemo(() => {
+    let list = games;
+    if (view === "fav") list = list.filter((g) => g.favorite);
+    else if (view === "recent") list = list.filter((g) => g.lastPlayed !== null);
+    else if (view === "most") list = list.filter((g) => g.totalPlaytimeSec > 0);
+    else if (view.startsWith("c:")) {
+      const set = memberSets.get(Number(view.slice(2)));
+      list = list.filter((g) => set?.has(g.id));
+    } else if (view.startsWith("s:")) list = list.filter((g) => g.systemId === view.slice(2));
+    const q = query.trim().toLowerCase();
+    if (q) list = list.filter((g) => g.title.toLowerCase().includes(q));
+    const key: SortKey = view === "recent" ? "played" : view === "most" ? "time" : sort;
+    const sorted = [...list].sort(COMPARE[key]);
+    return view === "recent" ? sorted.slice(0, 40) : sorted;
+  }, [games, view, query, sort, memberSets]);
+
+  const emptyText =
+    view === "fav"
+      ? "No favorites yet. Click the star on a game to add it here."
+      : view === "recent"
+        ? "Nothing played yet."
+        : view === "most"
+          ? "Play something and it will show up here."
+          : selectedCollection
+            ? "This collection is empty. Open a game and tick the collection on its page."
+            : query
+              ? "No games match your search."
+              : "Nothing here.";
+
+  const navButton = (id: string, label: string, count?: number) => (
+    <button key={id} className="chip" aria-pressed={view === id} onClick={() => setView(id)}>
+      {label} {count !== undefined && <span>{count}</span>}
+    </button>
   );
 
   return (
@@ -229,59 +306,115 @@ export default function Library({ systems }: { systems: System[] }) {
         </div>
       ) : (
         <div className="lib">
-          <nav className="systems" aria-label="Systems">
-            <button className="chip" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
-              All games <span>{games.length}</span>
-            </button>
-            {Object.keys(counts)
+          <nav className="systems" aria-label="Library views">
+            {navButton("all", "All games", games.length)}
+            {navButton("fav", "Favorites", favCount)}
+            {navButton("recent", "Recently played")}
+            {navButton("most", "Most played")}
+
+            <div className="nav-heading">Collections</div>
+            {collections.map((c) => navButton(`c:${c.id}`, c.name, c.count))}
+            <form
+              className="new-collection"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (newName.trim()) createCollection();
+              }}
+            >
+              <input
+                className="search"
+                placeholder="New collection"
+                aria-label="New collection name"
+                maxLength={60}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+              <button className="btn" type="submit" disabled={!newName.trim() || busy}>
+                Add
+              </button>
+            </form>
+
+            <div className="nav-heading">Systems</div>
+            {Object.keys(sysCounts)
               .sort((a, b) => (names[a] ?? a).localeCompare(names[b] ?? b))
-              .map((id) => (
-                <button key={id} className="chip" aria-pressed={filter === id} onClick={() => setFilter(id)}>
-                  {names[id] ?? id} <span>{counts[id]}</span>
-                </button>
-              ))}
+              .map((id) => navButton(`s:${id}`, names[id] ?? id, sysCounts[id]))}
           </nav>
-          <ul className="grid">
-            {shown.map((g) => {
-              const h = hue(g.title);
-              return (
-                <li key={g.id} className="tile">
-                  <button
-                    className="cover-btn"
-                    onClick={() => play(g)}
-                    disabled={running.has(g.id)}
-                    aria-label={`Play ${g.title}`}
+
+          <div>
+            <div className="viewbar">
+              {selectedCollection ? (
+                renaming === null ? (
+                  <>
+                    <h2>{selectedCollection.name}</h2>
+                    <button className="btn" onClick={() => setRenaming(selectedCollection.name)}>
+                      Rename
+                    </button>
+                    <button className="btn danger" onClick={deleteCollection}>
+                      Delete collection
+                    </button>
+                  </>
+                ) : (
+                  <form
+                    className="row"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      renameCollection();
+                    }}
                   >
-                    <div
-                      className="cover"
-                      style={{ background: `linear-gradient(135deg, hsl(${h} 55% 34%), hsl(${(h + 40) % 360} 55% 16%))` }}
-                    >
-                      {g.artPath ? (
-                        <img className="cover-img" src={convertFileSrc(g.artPath)} alt="" loading="lazy" />
-                      ) : (
-                        <span>{initials(g.title)}</span>
-                      )}
-                      {g.missing && <em className="badge">Missing</em>}
-                      {running.has(g.id) ? <em className="badge live">Playing</em> : <i className="play">▶ Play</i>}
-                    </div>
-                  </button>
-                  <div className="tile-title" title={g.path}>
-                    {g.title}
-                  </div>
-                  <div className="muted small">
-                    {names[g.systemId] ?? g.systemId}
-                    {playtime(g.totalPlaytimeSec) && ` · ${playtime(g.totalPlaytimeSec)}`}
-                  </div>
-                  <button className="tile-remove" onClick={() => removeGame(g)} aria-label={`Remove ${g.title} from library`}>
-                    Remove
-                  </button>
-                  <button className="tile-cover" onClick={() => pickCover(g)} aria-label={`Choose a cover for ${g.title}`}>
-                    Cover…
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                    <input
+                      className="search"
+                      aria-label="Collection name"
+                      maxLength={60}
+                      autoFocus
+                      value={renaming}
+                      onChange={(e) => setRenaming(e.target.value)}
+                    />
+                    <button className="btn primary" type="submit" disabled={!renaming.trim()}>
+                      Save
+                    </button>
+                    <button className="btn" type="button" onClick={() => setRenaming(null)}>
+                      Cancel
+                    </button>
+                  </form>
+                )
+              ) : (
+                <span className="muted small">
+                  {shown.length} game{shown.length === 1 ? "" : "s"}
+                </span>
+              )}
+              <span className="spacer" />
+              {!fixedOrder && (
+                <label className="sortlabel">
+                  Sort{" "}
+                  <select className="select" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                    {SORTS.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+
+            {shown.length === 0 ? (
+              <p className="muted">{emptyText}</p>
+            ) : (
+              <ul className="grid">
+                {shown.map((g) => (
+                  <GameTile
+                    key={g.id}
+                    game={g}
+                    systemName={names[g.systemId] ?? g.systemId}
+                    running={running.has(g.id)}
+                    onPlay={() => play(g)}
+                    onOpen={() => onOpen(g.id)}
+                    onFavorite={() => toggleFavorite(g)}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </>

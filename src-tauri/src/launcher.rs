@@ -32,8 +32,41 @@ fn e<E: ToString>(x: E) -> String {
     x.to_string()
 }
 
-fn build_args(template: &[String], rom: &str) -> Vec<String> {
-    template.iter().map(|a| if a == "{rom}" { rom.to_string() } else { a.clone() }).collect()
+/// Splits a line like `-C "Some Key=1" --flag` into arguments, honouring double quotes.
+fn split_args(s: &str) -> Vec<String> {
+    let mut out = vec![];
+    let mut cur = String::new();
+    let mut in_quotes = false;
+    let mut started = false;
+    for c in s.chars() {
+        match c {
+            '"' => {
+                in_quotes = !in_quotes;
+                started = true;
+            }
+            c if c.is_whitespace() && !in_quotes => {
+                if started {
+                    out.push(std::mem::take(&mut cur));
+                    started = false;
+                }
+            }
+            c => {
+                cur.push(c);
+                started = true;
+            }
+        }
+    }
+    if started {
+        out.push(cur);
+    }
+    out
+}
+
+/// Your per-game extra arguments go first, then the emulator's template with the game path filled in.
+fn build_args(template: &[String], rom: &str, extra: &str) -> Vec<String> {
+    let mut args = split_args(extra);
+    args.extend(template.iter().map(|a| if a == "{rom}" { rom.to_string() } else { a.clone() }));
+    args
 }
 
 /// Close sessions left open by a crash: count the time up to the last heartbeat.
@@ -61,11 +94,15 @@ pub fn play_game(
     running: tauri::State<'_, Running>,
     id: i64,
 ) -> Result<(), String> {
-    let (system_id, path): (String, String) = {
+    let (system_id, path, extra): (String, String, String) = {
         let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
-        conn.query_row("SELECT system_id, path FROM games WHERE id = ?1 AND removed = 0", [id], |r| {
-            Ok((r.get(0)?, r.get(1)?))
-        })
+        conn.query_row(
+            "SELECT g.system_id, g.path, COALESCE(o.extra_args, '')
+             FROM games g LEFT JOIN game_overrides o ON o.game_id = g.id
+             WHERE g.id = ?1 AND g.removed = 0",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
         .map_err(|_| "That game is no longer in the library.".to_string())?
     };
     if !Path::new(&path).exists() {
@@ -90,7 +127,7 @@ pub fn play_game(
         return Err("This game is already running.".into());
     }
     let cwd = exe.parent().unwrap_or(&dir).to_path_buf();
-    let mut child = match Command::new(&exe).args(build_args(&template, &path)).current_dir(cwd).spawn() {
+    let mut child = match Command::new(&exe).args(build_args(&template, &path, &extra)).current_dir(cwd).spawn() {
         Ok(c) => c,
         Err(err) => {
             if let Ok(mut r) = running.0.lock() {
@@ -155,7 +192,15 @@ mod tests {
     #[test]
     fn rom_placeholder_is_replaced_as_one_argument() {
         let t = vec!["-batch".to_string(), "--".to_string(), "{rom}".to_string()];
-        let a = build_args(&t, "C:\\roms\\My Game (USA).cue");
+        let a = build_args(&t, "C:\\roms\\My Game (USA).cue", "");
         assert_eq!(a, vec!["-batch", "--", "C:\\roms\\My Game (USA).cue"]);
+    }
+
+    #[test]
+    fn extra_arguments_come_first_and_respect_quotes() {
+        let t = vec!["-b".to_string(), "-e".to_string(), "{rom}".to_string()];
+        let a = build_args(&t, "D:\\g.rvz", "-C \"Core.Key=1\" --x");
+        assert_eq!(a, vec!["-C", "Core.Key=1", "--x", "-b", "-e", "D:\\g.rvz"]);
+        assert!(split_args("   ").is_empty());
     }
 }

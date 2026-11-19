@@ -46,6 +46,20 @@ CREATE TABLE IF NOT EXISTS play_sessions (
   ended_at INTEGER NOT NULL,
   completed INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS collections (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE COLLATE NOCASE
+);
+CREATE TABLE IF NOT EXISTS collection_games (
+  collection_id INTEGER NOT NULL,
+  game_id INTEGER NOT NULL,
+  PRIMARY KEY (collection_id, game_id)
+);
+CREATE TABLE IF NOT EXISTS game_overrides (
+  game_id INTEGER PRIMARY KEY,
+  extra_args TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT ''
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

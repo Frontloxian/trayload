@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Registry } from "./types";
 import Emulators from "./Emulators";
+import GameDetail from "./GameDetail";
 import Library from "./Library";
 import Settings from "./Settings";
 import "./App.css";
@@ -22,6 +23,8 @@ export default function App() {
   const [registry, setRegistry] = useState<Registry | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const [libKey, setLibKey] = useState(0);
 
   useEffect(() => {
     invoke<Registry>("get_registry").then(setRegistry).catch((e) => setError(String(e)));
@@ -39,6 +42,7 @@ export default function App() {
         else if (p.type === "drop") {
           setDragging(false);
           setPage("library");
+          setDetailId(null);
           invoke("import_paths", { paths: p.paths }).catch((e) => setError(String(e)));
         }
       })
@@ -59,7 +63,11 @@ export default function App() {
       <nav className="sidebar" aria-label="Main">
         <div className="brand">Trayload</div>
         {NAV.map((n) => (
-          <button key={n.id} className="nav" aria-current={page === n.id ? "page" : undefined} onClick={() => setPage(n.id)}>
+          <button key={n.id} className="nav" aria-current={page === n.id ? "page" : undefined} onClick={() => {
+              setPage(n.id);
+              if (detailId !== null) setLibKey((k) => k + 1);
+              setDetailId(null);
+            }}>
             {n.label}
           </button>
         ))}
@@ -79,7 +87,21 @@ export default function App() {
         {page === "emulators" ? (
           <Emulators />
         ) : page === "library" ? (
-          <Library systems={registry?.systems ?? []} />
+          <>
+            {detailId !== null && (
+              <GameDetail
+                id={detailId}
+                systems={registry?.systems ?? []}
+                onBack={() => {
+                  setDetailId(null);
+                  setLibKey((k) => k + 1);
+                }}
+              />
+            )}
+            <div hidden={detailId !== null}>
+              <Library systems={registry?.systems ?? []} refreshKey={libKey} onOpen={setDetailId} />
+            </div>
+          </>
         ) : page === "settings" ? (
           <Settings />
         ) : (

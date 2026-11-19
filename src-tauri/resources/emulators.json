@@ -141,8 +141,7 @@
    "source": {
     "type": "page",
     "url": "https://dolphin-emu.org/download/",
-    "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z",
-    "fallbackUrl": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z"
+    "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z"
    },
    "exts": [
     "iso",
@@ -168,8 +167,7 @@
    "source": {
     "type": "page",
     "url": "https://dolphin-emu.org/download/",
-    "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z",
-    "fallbackUrl": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z"
+    "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z"
    },
    "exts": [
     "iso",

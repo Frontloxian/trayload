@@ -1,4 +1,5 @@
 mod art;
+mod collections;
 mod installer;
 mod launcher;
 mod library;
@@ -57,6 +58,15 @@ pub fn run() {
             art::set_steamgriddb_key,
             art::retry_art,
             art::set_art_from_file,
+            collections::set_favorite,
+            collections::list_collections,
+            collections::create_collection,
+            collections::rename_collection,
+            collections::delete_collection,
+            collections::list_collection_members,
+            collections::set_game_in_collection,
+            collections::get_game_details,
+            collections::save_overrides,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Trayload");

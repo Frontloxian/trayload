@@ -56,6 +56,29 @@ export interface ArtSettings {
   hasSteamgriddbKey: boolean;
 }
 
+export interface Collection {
+  id: number;
+  name: string;
+  count: number;
+}
+
+export interface Membership {
+  collectionId: number;
+  gameId: number;
+}
+
+export interface SessionInfo {
+  startedAt: number;
+  seconds: number;
+}
+
+export interface GameDetails {
+  extraArgs: string;
+  notes: string;
+  sessions: SessionInfo[];
+  sessionCount: number;
+}
+
 export interface Unassigned {
   path: string;
   fileName: string;
