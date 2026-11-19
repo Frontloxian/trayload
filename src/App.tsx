@@ -6,6 +6,7 @@ import Emulators from "./Emulators";
 import GameDetail from "./GameDetail";
 import Library from "./Library";
 import Settings from "./Settings";
+import Setup from "./Setup";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
@@ -102,6 +103,8 @@ export default function App() {
               <Library systems={registry?.systems ?? []} refreshKey={libKey} onOpen={setDetailId} />
             </div>
           </>
+        ) : page === "setup" ? (
+          <Setup onEmulators={() => setPage("emulators")} />
         ) : page === "settings" ? (
           <Settings />
         ) : (

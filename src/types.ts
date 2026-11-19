@@ -79,6 +79,26 @@ export interface GameDetails {
   sessionCount: number;
 }
 
+export interface SetupItemStatus {
+  label: string;
+  required: boolean;
+  found: boolean;
+  matched: string | null;
+  note: string | null;
+}
+
+export interface SystemSetup {
+  systemId: string;
+  systemName: string;
+  emulator: string;
+  installed: boolean;
+  installable: boolean;
+  state: "none" | "notinstalled" | "needs" | "ready";
+  intro: string | null;
+  folder: string | null;
+  items: SetupItemStatus[];
+}
+
 export interface Unassigned {
   path: string;
   fileName: string;

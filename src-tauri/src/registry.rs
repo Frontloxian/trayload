@@ -28,6 +28,39 @@ pub enum Source {
     },
 }
 
+fn yes() -> bool {
+    true
+}
+
+/// One thing a system needs (or can optionally use), such as a BIOS file.
+/// Matched by file name (regex) and, where known, exact file size. Never by downloading anything.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupItem {
+    pub label: String,
+    #[serde(default = "yes")]
+    pub required: bool,
+    #[serde(default)]
+    pub name_pattern: Option<String>,
+    #[serde(default)]
+    pub sizes: Option<Vec<u64>>,
+    #[serde(default)]
+    pub note: Option<String>,
+    /// Also look inside sub-folders (up to 3 levels deep).
+    #[serde(default)]
+    pub deep: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupDef {
+    /// Folder to check, relative to the emulator's own folder.
+    pub folder: String,
+    #[serde(default)]
+    pub intro: Option<String>,
+    pub items: Vec<SetupItem>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct System {
     pub id: String,
@@ -47,6 +80,9 @@ pub struct System {
     /// libretro-thumbnails repository names for this system's box art.
     #[serde(rename = "artRepos", default)]
     pub art_repos: Option<Vec<String>>,
+    /// What the setup checklist looks for (BIOS files and similar).
+    #[serde(default)]
+    pub setup: Option<SetupDef>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

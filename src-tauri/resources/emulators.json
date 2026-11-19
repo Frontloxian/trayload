@@ -159,7 +159,20 @@
    ],
    "artRepos": [
     "Nintendo_-_GameCube"
-   ]
+   ],
+   "setup": {
+    "folder": "User/GC",
+    "intro": "GameCube games run without any extra files.",
+    "items": [
+     {
+      "label": "GameCube BIOS (IPL.bin)",
+      "required": false,
+      "namePattern": "^IPL\\.bin$",
+      "deep": true,
+      "note": "Optional. Only needed to see the GameCube boot logo. Put it in a USA, EUR or JAP folder inside this one."
+     }
+    ]
+   }
   },
   {
    "id": "wii",
@@ -231,7 +244,21 @@
    ],
    "artRepos": [
     "Sony_-_PlayStation"
-   ]
+   ],
+   "setup": {
+    "folder": "bios",
+    "intro": "DuckStation needs a PlayStation BIOS file from your own console. One file is enough.",
+    "items": [
+     {
+      "label": "PlayStation BIOS",
+      "required": true,
+      "sizes": [
+       524288
+      ],
+      "note": "A 512 KB .bin file (for example scph5501.bin). Pick one that matches your games' region."
+     }
+    ]
+   }
   },
   {
    "id": "ps2",
@@ -249,7 +276,21 @@
    ],
    "artRepos": [
     "Sony_-_PlayStation_2"
-   ]
+   ],
+   "setup": {
+    "folder": "bios",
+    "intro": "PCSX2 needs a PlayStation 2 BIOS from your own console.",
+    "items": [
+     {
+      "label": "PlayStation 2 BIOS",
+      "required": true,
+      "sizes": [
+       4194304
+      ],
+      "note": "A 4 MB .bin file. Pick one that matches your games' region."
+     }
+    ]
+   }
   },
   {
    "id": "ps3",
@@ -317,7 +358,29 @@
    ],
    "artRepos": [
     "Sega_-_Dreamcast"
-   ]
+   ],
+   "setup": {
+    "folder": "data",
+    "intro": "Flycast has a built-in replacement BIOS, so these files are optional. Real ones can improve compatibility.",
+    "items": [
+     {
+      "label": "Dreamcast boot ROM (dc_boot.bin)",
+      "required": false,
+      "namePattern": "^dc_boot\\.bin$",
+      "sizes": [
+       2097152
+      ]
+     },
+     {
+      "label": "Dreamcast flash (dc_flash.bin)",
+      "required": false,
+      "namePattern": "^dc_flash\\.bin$",
+      "sizes": [
+       131072
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "xbox",

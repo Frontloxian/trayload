@@ -3,6 +3,7 @@ mod collections;
 mod installer;
 mod launcher;
 mod library;
+mod setup;
 mod registry;
 
 use tauri::{Emitter, Manager};
@@ -68,6 +69,8 @@ pub fn run() {
             collections::set_game_in_collection,
             collections::get_game_details,
             collections::save_overrides,
+            setup::check_setup,
+            setup::open_setup_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Trayload");

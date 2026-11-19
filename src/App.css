@@ -117,3 +117,16 @@ h1 { margin: 0; font-size: 26px; }
 .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .history { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
 .history li { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 4px 0; }
+
+.group { font-size: 15px; margin: 20px 0 8px; color: var(--muted); font-weight: 600; }
+.setup-grid { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); align-items: start; }
+.setup-head { grid-template-columns: 1fr auto; }
+.setup-intro { margin: 8px 0 4px; line-height: 1.5; }
+.setup-items { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
+.setup-items li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.mark { font-weight: 700; text-align: center; }
+.mark.ok { color: #6ee7b0; }
+.mark.bad { color: #f5c04d; }
+.mark.opt { color: var(--muted); }
+.folder-path { overflow-wrap: anywhere; margin-bottom: 6px; }
+.setup-progress { margin: 0; font-size: 16px; font-weight: 600; }
