@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { Collection, Game, GameDetails, Membership, System } from "./types";
+import { useCover } from "./useCover";
 import { dateTime, duration, hue, initials } from "./util";
 
 interface Props {
@@ -21,6 +22,7 @@ export default function GameDetail({ id, systems, onBack }: Props) {
   const [running, setRunning] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const cover = useCover(id, game ? game.artPath : null);
 
   const load = useCallback(() => {
     const fail = (e: unknown) => setError(String(e));
@@ -83,7 +85,7 @@ export default function GameDetail({ id, systems, onBack }: Props) {
 
   const system = systems.find((s) => s.id === game.systemId);
   const h = hue(game.title);
-  const art = game.artPath ? convertFileSrc(game.artPath) : null;
+  const art = cover;
 
   return (
     <>

@@ -58,6 +58,7 @@ pub fn run() {
             art::set_steamgriddb_key,
             art::retry_art,
             art::set_art_from_file,
+            art::get_cover,
             collections::set_favorite,
             collections::list_collections,
             collections::create_collection,

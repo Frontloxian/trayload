@@ -407,6 +407,29 @@ pub fn set_art_from_file(app: AppHandle, db: tauri::State<'_, Db>, id: i64, path
     Ok(())
 }
 
+/// Returns a game's cover as a data URL, read straight from the app's own art folder.
+/// (Only the file recorded for that game in the library is ever read.)
+#[tauri::command]
+pub fn get_cover(db: tauri::State<'_, Db>, id: i64) -> Result<String, String> {
+    let path: Option<String> = {
+        let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
+        conn.query_row("SELECT art_file FROM games WHERE id = ?1", [id], |r| r.get::<_, Option<String>>(0))
+            .optional()
+            .map_err(e)?
+            .flatten()
+    };
+    let path = path.ok_or("this game has no cover")?;
+    let bytes = fs::read(&path).map_err(|x| format!("cannot read the cover file: {x}"))?;
+    let ext = image_ext(&bytes).ok_or("the cover file is not a PNG, JPEG or WebP image")?;
+    let mime = match ext {
+        "png" => "image/png",
+        "jpg" => "image/jpeg",
+        _ => "image/webp",
+    };
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    Ok(format!("data:{mime};base64,{}", STANDARD.encode(&bytes)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

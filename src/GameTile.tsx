@@ -1,5 +1,5 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
 import type { Game } from "./types";
+import { useCover } from "./useCover";
 import { hue, initials, playtime } from "./util";
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export default function GameTile({ game: g, systemName, running, onPlay, onOpen, onFavorite }: Props) {
+  const cover = useCover(g.id, g.artPath);
   const h = hue(g.title);
   const time = playtime(g.totalPlaytimeSec);
   return (
@@ -21,8 +22,8 @@ export default function GameTile({ game: g, systemName, running, onPlay, onOpen,
           className="cover"
           style={{ background: `linear-gradient(135deg, hsl(${h} 55% 34%), hsl(${(h + 40) % 360} 55% 16%))` }}
         >
-          {g.artPath ? (
-            <img className="cover-img" src={convertFileSrc(g.artPath)} alt="" loading="lazy" />
+          {cover ? (
+            <img className="cover-img" src={cover} alt="" />
           ) : (
             <span>{initials(g.title)}</span>
           )}
