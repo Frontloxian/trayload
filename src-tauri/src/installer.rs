@@ -26,6 +26,8 @@ const ALLOWED_HOSTS: &[&str] = &[
     "dl.dolphin-emu.org",
     "git.eden-emu.dev",
     "stable.eden-emu.dev",
+    "ppsspp.org",
+    "www.ppsspp.org",
 ];
 
 #[derive(Default)]
@@ -216,7 +218,15 @@ fn asset_from_release(rel: &serde_json::Value, pattern: &str, version_regex: Opt
 
 fn from_link(link: &str) -> Resolved {
     let file_name = link.rsplit('/').next().unwrap_or("download").to_string();
-    let version = file_name.trim_end_matches(".7z").trim_end_matches(".zip").to_string();
+    // A version-looking folder in the link (".../files/1_20_4/ppsspp_win.zip") beats the file name,
+    // so a new release is noticed even when the file name never changes.
+    let seg = regex::Regex::new(r"^v?\d+[._]\d+(?:[._]\d+)*[a-z]?$").unwrap();
+    let from_path = reqwest::Url::parse(link).ok().and_then(|u| {
+        u.path_segments()
+            .and_then(|mut s| s.rfind(|p| seg.is_match(p)).map(|p| p.replace('_', ".")))
+    });
+    let version = from_path
+        .unwrap_or_else(|| file_name.trim_end_matches(".7z").trim_end_matches(".zip").to_string());
     Resolved { url: link.to_string(), file_name, version }
 }
 
@@ -237,9 +247,11 @@ async fn resolve_page(client: &reqwest::Client, url: &str, pat: &str) -> Result<
         .await
         .map_err(|e| e.to_string())?;
     let m = re.find(&body).ok_or("no link on the download page matched the pattern")?;
-    let link = m.as_str();
-    check_host(link)?;
-    Ok(from_link(link))
+    // Pages often use relative links ("/files/..."); make them absolute against the page.
+    let base = reqwest::Url::parse(url).map_err(|e| e.to_string())?;
+    let link = base.join(m.as_str()).map_err(|e| format!("bad link on the page: {e}"))?.to_string();
+    check_host(&link)?;
+    Ok(from_link(&link))
 }
 
 async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, String> {
@@ -665,6 +677,15 @@ pub fn uninstall_emulator(app: AppHandle, id: String) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn version_from_link_folder() {
+        let r = from_link("https://www.ppsspp.org/files/1_20_4/ppsspp_win.zip");
+        assert_eq!(r.version, "1.20.4");
+        assert_eq!(r.file_name, "ppsspp_win.zip");
+        let d = from_link("https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z");
+        assert_eq!(d.version, "dolphin-2609b-x64");
+    }
 
     #[test]
     fn slugs() {

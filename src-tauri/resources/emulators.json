@@ -411,7 +411,9 @@
    "emulator": "PPSSPP",
    "source": {
     "type": "page",
-    "url": "https://www.ppsspp.org/download/"
+    "url": "https://www.ppsspp.org/download/",
+    "assetPattern": "(?:https://www\\.ppsspp\\.org)?/files/[\\w.]+/ppsspp_win\\.zip",
+    "fallbackUrl": "https://www.ppsspp.org/files/1_20_4/ppsspp_win.zip"
    },
    "exts": [
     "iso",
@@ -420,6 +422,11 @@
    ],
    "artRepos": [
     "Sony_-_PlayStation_Portable"
+   ],
+   "exePattern": "^PPSSPPWindows64\\.exe$",
+   "portableMarker": "memstick/",
+   "launchArgs": [
+    "{rom}"
    ]
   },
   {
@@ -544,5 +551,5 @@
    ]
   }
  ],
- "pending": "Still to add: PPSSPP (needs its Windows download link), MAME, and the Sega/Atari/NEC/etc. systems via RetroArch. PS5 is watch-only: follow it in the News tab, no install entry."
+ "pending": "Still to add: MAME, and the Sega/Atari/NEC/etc. systems via RetroArch. PS5 is watch-only: follow it in the News tab, no install entry."
 }
