@@ -55,7 +55,7 @@ fn find_match(folder: &Path, item: &SetupItem) -> Option<String> {
                 continue;
             }
             if meta.is_dir() {
-                if item.deep && depth < 3 {
+                if item.deep && depth < 5 {
                     stack.push((p, depth + 1));
                 }
                 continue;

@@ -21,6 +21,15 @@ pub enum Source {
         #[serde(rename = "versionRegex", default)]
         version_regex: Option<String>,
     },
+    /// Latest stable release from a Gitea or Forgejo server (same JSON shape as GitHub's).
+    Forgejo {
+        host: String,
+        repo: String,
+        #[serde(rename = "assetPattern")]
+        asset_pattern: String,
+        #[serde(rename = "versionRegex", default)]
+        version_regex: Option<String>,
+    },
     /// Vendor download page (resolved later by the installer).
     Page {
         url: String,
@@ -86,6 +95,12 @@ pub struct System {
     /// What the setup checklist looks for (BIOS files and similar).
     #[serde(default)]
     pub setup: Option<SetupDef>,
+    /// "experimental" entries are hidden behind an opt-in and need a confirmation to install.
+    #[serde(default)]
+    pub tier: Option<String>,
+    /// Shown on the emulator's card and in the install confirmation.
+    #[serde(default)]
+    pub warning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -117,7 +132,10 @@ mod tests {
     fn embedded_registry_parses() {
         let r = parse(EMBEDDED).expect("embedded registry must parse");
         assert!(!r.systems.is_empty());
-        assert!(r.systems.iter().all(|s| !s.id.is_empty() && !s.exts.is_empty()));
+        assert!(r
+            .systems
+            .iter()
+            .all(|s| !s.id.is_empty() && (!s.exts.is_empty() || s.tier.as_deref() == Some("experimental"))));
     }
 
     #[test]
@@ -138,6 +156,9 @@ mod tests {
                 }
                 Source::Page { asset_pattern: Some(p), .. } => {
                     assert!(Regex::new(p).is_ok(), "bad assetPattern for {}", s.id);
+                }
+                Source::Forgejo { asset_pattern, .. } => {
+                    assert!(Regex::new(asset_pattern).is_ok(), "bad assetPattern for {}", s.id);
                 }
                 _ => {}
             }

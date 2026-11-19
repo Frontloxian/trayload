@@ -29,6 +29,8 @@ export interface EmulatorEntry {
   systems: string[];
   installable: boolean;
   installed: InstalledInfo | null;
+  tier: string | null;
+  warning: string | null;
 }
 
 export interface InstallProgress {

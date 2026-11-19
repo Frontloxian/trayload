@@ -248,6 +248,62 @@
    "portableMarker": "portable/"
   },
   {
+   "id": "switch",
+   "name": "Nintendo Switch",
+   "emulator": "Eden",
+   "source": {
+    "type": "forgejo",
+    "host": "git.eden-emu.dev",
+    "repo": "eden-emu/eden",
+    "assetPattern": "^Eden-Windows-.*-amd64-msvc-standard\\.zip$"
+   },
+   "exts": [
+    "nsp",
+    "xci"
+   ],
+   "exePattern": "^eden\\.exe$",
+   "portableMarker": "user/",
+   "launchArgs": [
+    "-g",
+    "{rom}"
+   ],
+   "warning": "Needs prod.keys and firmware dumped from your own Switch. Trayload never provides or links them. Eden is downloaded from its official release server (git.eden-emu.dev, with files from stable.eden-emu.dev).",
+   "setup": {
+    "folder": "user",
+    "intro": "Eden needs prod.keys, and many games also need firmware, both from your own Switch. Trayload doesn't provide or link them.",
+    "items": [
+     {
+      "label": "Switch keys (prod.keys)",
+      "required": true,
+      "namePattern": "^prod\\.keys$",
+      "deep": true,
+      "note": "Goes in the keys folder inside this one."
+     },
+     {
+      "label": "Switch firmware",
+      "required": false,
+      "namePattern": "\\.nca$",
+      "deep": true,
+      "note": "Needed by many games. Install it from inside Eden (Tools, then Install Firmware)."
+     }
+    ]
+   }
+  },
+  {
+   "id": "switch2",
+   "name": "Nintendo Switch 2",
+   "emulator": "Lichii",
+   "tier": "experimental",
+   "source": {
+    "type": "github",
+    "repo": "zortos293/Lichii",
+    "assetPattern": "^lichii-windows-x86_64\\.zip$"
+   },
+   "exts": [],
+   "exePattern": "^lichii.*\\.exe$",
+   "warning": "Experimental. Switch 2 emulation is very early: expect crashes, missing games and changes without notice. It needs keys and firmware from your own console. Trayload downloads it only from github.com/zortos293/Lichii, and games can't be started from Trayload yet."
+  },
+  {
    "id": "ps1",
    "name": "PlayStation",
    "emulator": "DuckStation",
@@ -488,7 +544,5 @@
    ]
   }
  ],
- "pending": [
-  "Add Switch (Eden), Switch 2 (Lichii, experimental) and the Sega/Atari/NEC/etc. entries from CONSOLES.md once the list is approved. PS5 is watch-only: follow it in the News tab, no install entry."
- ]
+ "pending": "Still to add: PPSSPP (needs its Windows download link), MAME, and the Sega/Atari/NEC/etc. systems via RetroArch. PS5 is watch-only: follow it in the News tab, no install entry."
 }

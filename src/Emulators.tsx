@@ -9,6 +9,22 @@ export default function Emulators() {
   const [items, setItems] = useState<EmulatorEntry[]>([]);
   const [progress, setProgress] = useState<Record<string, InstallProgress>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showExp, setShowExp] = useState(() => {
+    try {
+      return localStorage.getItem("trayload.showExperimental") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleExp = (on: boolean) => {
+    setShowExp(on);
+    try {
+      localStorage.setItem("trayload.showExperimental", on ? "1" : "0");
+    } catch {
+      /* remembering the choice is optional */
+    }
+  };
 
   const refresh = useCallback(() => {
     invoke<EmulatorEntry[]>("list_emulators")
@@ -34,7 +50,9 @@ export default function Emulators() {
       return n;
     });
 
-  async function install(id: string) {
+  async function install(entry: EmulatorEntry) {
+    const id = entry.id;
+    if (entry.warning && !window.confirm(`${entry.name}\n\n${entry.warning}\n\nInstall it anyway?`)) return;
     setErr(id, null);
     setProgress((p) => ({ ...p, [id]: { id, stage: "resolving", downloaded: 0, total: 0 } }));
     try {
@@ -77,8 +95,14 @@ export default function Emulators() {
   return (
     <>
       {errors._list && <p className="error">{errors._list}</p>}
+      <label className="toggle">
+        <input type="checkbox" checked={showExp} onChange={(e) => toggleExp(e.target.checked)} /> Show experimental
+        emulators
+      </label>
       <ul className="cards">
-        {items.map((e) => {
+        {items
+          .filter((e) => e.tier !== "experimental" || showExp || e.installed)
+          .map((e) => {
           const p = progress[e.id];
           const busy = !!p;
           const pct = p && p.total > 0 ? Math.min(100, (p.downloaded / p.total) * 100) : 0;
@@ -87,7 +111,10 @@ export default function Emulators() {
               <div className="card-main">
                 <div>
                   <strong>{e.name}</strong>
-                  <div className="muted small">{e.systems.join(", ")}</div>
+                  <div className="muted small">
+                    {e.systems.join(", ")}{" "}
+                    {e.tier === "experimental" && <span className="pill purple">Experimental</span>}
+                  </div>
                 </div>
                 <div className="status">
                   {busy ? (
@@ -113,7 +140,7 @@ export default function Emulators() {
                     </button>
                   )}
                   {e.installable && (
-                    <button className="btn" disabled={busy} onClick={() => install(e.id)}>
+                    <button className="btn" disabled={busy} onClick={() => install(e)}>
                       {e.installed ? "Reinstall" : "Install"}
                     </button>
                   )}
@@ -129,6 +156,7 @@ export default function Emulators() {
                   <div style={{ width: `${pct}%` }} />
                 </div>
               )}
+              {e.warning && <p className="muted small warn">{e.warning}</p>}
               {errors[e.id] && <p className="error small">{errors[e.id]}</p>}
             </li>
           );

@@ -130,3 +130,7 @@ h1 { margin: 0; font-size: 26px; }
 .mark.opt { color: var(--muted); }
 .folder-path { overflow-wrap: anywhere; margin-bottom: 6px; }
 .setup-progress { margin: 0; font-size: 16px; font-weight: 600; }
+
+.pill.purple { background: #2a1f5a; color: #c4b5fd; margin-left: 4px; }
+.toggle { display: inline-block; margin: 0 0 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
+.warn { margin: 8px 0 0; line-height: 1.5; }

@@ -24,6 +24,8 @@ const ALLOWED_HOSTS: &[&str] = &[
     "github-releases.githubusercontent.com",
     "dolphin-emu.org",
     "dl.dolphin-emu.org",
+    "git.eden-emu.dev",
+    "stable.eden-emu.dev",
 ];
 
 #[derive(Default)]
@@ -46,6 +48,8 @@ pub struct EmulatorEntry {
     pub systems: Vec<String>,
     pub installable: bool,
     pub installed: Option<InstalledInfo>,
+    pub tier: Option<String>,
+    pub warning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -123,7 +127,8 @@ fn http_client() -> Result<reqwest::Client, String> {
         if ok {
             attempt.follow()
         } else {
-            attempt.error("redirect to a host that is not allowed")
+            let h = attempt.url().host_str().unwrap_or("?").to_string();
+            attempt.error(format!("redirect to a host that is not allowed: {h}"))
         }
     });
     reqwest::Client::builder()
@@ -182,6 +187,31 @@ fn exe_not_found(root: &Path) -> String {
         "Extracted fine, but the emulator's program was not found (exePattern). The .exe files in the download are: {}",
         if found.is_empty() { "none".to_string() } else { found.join(", ") }
     )
+}
+
+/// Picks the download from a GitHub- or Forgejo-style release JSON.
+fn asset_from_release(rel: &serde_json::Value, pattern: &str, version_regex: Option<&str>) -> Result<Resolved, String> {
+    let re = RegexBuilder::new(pattern)
+        .case_insensitive(true)
+        .build()
+        .map_err(|e| format!("bad assetPattern: {e}"))?;
+    let tag = rel["tag_name"].as_str().unwrap_or("unknown");
+    let published = rel["published_at"].as_str();
+    let assets = rel["assets"].as_array().ok_or("release has no assets")?;
+    let mut names = vec![];
+    for a in assets {
+        let name = a["name"].as_str().unwrap_or("");
+        names.push(name.to_string());
+        if re.is_match(name) {
+            let dl = a["browser_download_url"].as_str().ok_or("asset has no download URL")?;
+            return Ok(Resolved {
+                url: dl.into(),
+                file_name: name.into(),
+                version: pick_version(tag, published, name, version_regex),
+            });
+        }
+    }
+    Err(format!("No asset in release {tag} matches /{pattern}/. Assets: {}", names.join(", ")))
 }
 
 fn from_link(link: &str) -> Resolved {
@@ -248,6 +278,30 @@ async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, Str
                 "No asset in release {tag} matches /{asset_pattern}/. Assets: {}",
                 names.join(", ")
             ))
+        }
+        Source::Forgejo { host, repo, asset_pattern, version_regex } => {
+            check_host(&format!("https://{host}/"))?;
+            let url = format!("https://{host}/api/v1/repos/{repo}/releases?per_page=10");
+            let list: serde_json::Value = client
+                .get(&url)
+                .header("Accept", "application/json")
+                .send()
+                .await
+                .map_err(|e| format!("release lookup failed: {e}"))?
+                .error_for_status()
+                .map_err(|e| format!("{host} said: {e}"))?
+                .json()
+                .await
+                .map_err(|e| format!("could not read the release list: {e}"))?;
+            let rel = list
+                .as_array()
+                .and_then(|a| {
+                    a.iter().find(|r| {
+                        !r["draft"].as_bool().unwrap_or(false) && !r["prerelease"].as_bool().unwrap_or(false)
+                    })
+                })
+                .ok_or("no stable release found")?;
+            asset_from_release(rel, asset_pattern, version_regex.as_deref())
         }
         Source::Page { url, asset_pattern, fallback_url } => {
             let scraped = match asset_pattern.as_deref() {
@@ -409,7 +463,7 @@ pub fn list_emulators(app: AppHandle) -> Result<Vec<EmulatorEntry>, String> {
             continue;
         }
         let source_ready = match &s.source {
-            Source::Github { .. } => true,
+            Source::Github { .. } | Source::Forgejo { .. } => true,
             Source::Page { asset_pattern, .. } => asset_pattern.is_some(),
         };
         let installed = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d));
@@ -419,6 +473,8 @@ pub fn list_emulators(app: AppHandle) -> Result<Vec<EmulatorEntry>, String> {
             systems: vec![s.name.clone()],
             installable: source_ready && s.exe_pattern.is_some(),
             installed,
+            tier: s.tier.clone(),
+            warning: s.warning.clone(),
         });
     }
     Ok(out)
