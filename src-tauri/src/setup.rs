@@ -37,7 +37,7 @@ pub struct SystemSetup {
 
 fn safe_rel(p: &str) -> bool {
     let path = Path::new(p);
-    path.components().next().is_some() && path.components().all(|c| matches!(c, Component::Normal(_)))
+    p == "." || (path.components().next().is_some() && path.components().all(|c| matches!(c, Component::Normal(_))))
 }
 
 fn find_match(folder: &Path, item: &SetupItem) -> Option<String> {
@@ -213,7 +213,8 @@ mod tests {
         for s in &reg.systems {
             if let Some(def) = &s.setup {
                 assert!(safe_rel(&def.folder), "unsafe folder for {}", s.id);
-                assert!(!def.items.is_empty());
+                // A system that needs nothing has an intro and no items; it must still say something.
+                assert!(!def.items.is_empty() || def.intro.is_some(), "{} has an empty setup", s.id);
             }
         }
     }

@@ -165,3 +165,16 @@ export interface MusicPack {
   builtin: boolean;
   tracks: MusicTrack[];
 }
+
+export interface RemovedGame {
+  id: number;
+  title: string;
+  systemId: string;
+  path: string;
+}
+
+export interface AppInfo {
+  version: string;
+  dataFolder: string;
+  logFolder: string;
+}

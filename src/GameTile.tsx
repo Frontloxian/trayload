@@ -9,9 +9,10 @@ interface Props {
   onPlay: () => void;
   onOpen: () => void;
   onFavorite: () => void;
+  onRemove?: () => void;
 }
 
-export default function GameTile({ game: g, systemName, running, onPlay, onOpen, onFavorite }: Props) {
+export default function GameTile({ game: g, systemName, running, onPlay, onOpen, onFavorite, onRemove }: Props) {
   const cover = useCover(g.id, g.artPath);
   const h = hue(g.title);
   const time = playtime(g.totalPlaytimeSec);
@@ -39,6 +40,11 @@ export default function GameTile({ game: g, systemName, running, onPlay, onOpen,
       >
         {g.favorite ? "★" : "☆"}
       </button>
+      {onRemove && (
+        <button className="tile-remove" onClick={onRemove} aria-label={`Remove ${g.title} from the library`} title="Remove from library (the file is not deleted)">
+          ✕
+        </button>
+      )}
       <button className="tile-title-btn" onClick={onOpen} title={`${g.title}\n${g.path}`}>
         {g.title}
       </button>

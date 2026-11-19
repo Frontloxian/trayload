@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Registry, UpdateInfo } from "./types";
 import Emulators from "./Emulators";
+import ErrorBoundary from "./ErrorBoundary";
+import Home from "./Home";
 import GameDetail from "./GameDetail";
 import Library from "./Library";
 import MiniPlayer from "./MiniPlayer";
@@ -38,6 +40,32 @@ export default function App() {
 
   // Look for newer emulator versions once at launch, quietly in the background.
   useEffect(checkUpdates, []);
+
+  // Optional: install updates on their own (Settings, "Update emulators automatically").
+  const autoTried = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    let on = false;
+    try {
+      on = localStorage.getItem("trayload.autoUpdate") === "1";
+    } catch {
+      /* off */
+    }
+    if (!on || updates.length === 0) return;
+    const todo = updates.filter((u) => !autoTried.current.has(u.id + u.latest));
+    if (todo.length === 0) return;
+    todo.forEach((u) => autoTried.current.add(u.id + u.latest));
+    (async () => {
+      for (const u of todo) {
+        try {
+          await invoke("install_emulator", { id: u.id });
+        } catch (e) {
+          invoke("log_frontend_error", { message: `auto-update of ${u.id} failed: ${e}` }).catch(() => {});
+        }
+      }
+      checkUpdates();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updates]);
 
   useEffect(() => {
     invoke<Registry>("get_registry").then(setRegistry).catch((e) => setError(String(e)));
@@ -103,7 +131,18 @@ export default function App() {
 
         {error && <p className="error">{error}</p>}
 
-        {page === "emulators" ? (
+        <ErrorBoundary resetKey={page}>
+        {page === "home" ? (
+          <Home
+            systems={registry?.systems ?? []}
+            updates={updates}
+            onOpenGame={(id) => {
+              setPage("library");
+              setDetailId(id);
+            }}
+            onGo={setPage}
+          />
+        ) : page === "emulators" ? (
           <Emulators updates={updates} onChanged={checkUpdates} />
         ) : page === "library" ? (
           <>
@@ -127,9 +166,8 @@ export default function App() {
           <News updates={updates} onEmulators={() => setPage("emulators")} />
         ) : page === "settings" ? (
           <Settings music={music} />
-        ) : (
-          <p className="muted">Coming in a later milestone.</p>
-        )}
+        ) : null}
+        </ErrorBoundary>
       </main>
 
       {dragging && (

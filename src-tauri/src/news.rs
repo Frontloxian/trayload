@@ -97,7 +97,7 @@ fn load_config(app: &AppHandle) -> Result<NewsConfig, String> {
         if let Ok(text) = fs::read_to_string(d.join("news.json")) {
             match serde_json::from_str::<NewsConfig>(&text) {
                 Ok(c) => return Ok(c),
-                Err(e) => eprintln!("[news] ignoring bad news.json: {e}"),
+                Err(e) => crate::applog!("[news] ignoring bad news.json: {e}"),
             }
         }
     }

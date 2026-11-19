@@ -30,6 +30,7 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 rusqlite = { version = "0.43.0", features = ["bundled"] }
 tauri-plugin-dialog = "2.8.4"
 base64 = "0.23.1"
+keyring = { version = "3", features = ["windows-native"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

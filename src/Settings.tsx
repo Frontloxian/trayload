@@ -1,19 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import type { ArtSettings } from "./types";
+import type { AppInfo, ArtSettings, RemovedGame } from "./types";
 import type { Music } from "./useMusic";
 
 export default function Settings({ music }: { music: Music }) {
   const [hasKey, setHasKey] = useState(false);
   const [key, setKey] = useState("");
   const [folders, setFolders] = useState<string[]>([]);
+  const [removed, setRemoved] = useState<RemovedGame[]>([]);
+  const [info, setInfo] = useState<AppInfo | null>(null);
+  const [auto, setAuto] = useState(() => {
+    try {
+      return localStorage.getItem("trayload.autoUpdate") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     invoke<ArtSettings>("get_art_settings").then((s) => setHasKey(s.hasSteamgriddbKey));
     invoke<string[]>("get_rom_folders").then(setFolders);
+    invoke<RemovedGame[]>("list_removed_games").then(setRemoved).catch(() => {});
+    invoke<AppInfo>("get_app_info").then(setInfo).catch(() => {});
   }, []);
 
   useEffect(load, [load]);
@@ -43,7 +54,7 @@ export default function Settings({ music }: { music: Music }) {
         <h2>Artwork</h2>
         <p className="muted">
           Covers come from libretro-thumbnails (no key needed) and, if you add a key, SteamGridDB. Get a free key on
-          steamgriddb.com under Preferences, then API. The key stays on this PC.
+          steamgriddb.com under Preferences, then API. The key is kept in the Windows credential store on this PC.
         </p>
         <div className="row">
           <input
@@ -193,6 +204,65 @@ export default function Settings({ music }: { music: Music }) {
             </div>
           ))
         )}
+      </section>
+
+      <section className="section">
+        <h2>Emulator updates</h2>
+        <p className="muted">
+          Trayload always shows "Update ready" when a newer emulator version exists. You can also let it install
+          updates by itself when it starts. The old version is kept as a backup until the next update.
+        </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={auto}
+            onChange={(e) => {
+              setAuto(e.target.checked);
+              try {
+                localStorage.setItem("trayload.autoUpdate", e.target.checked ? "1" : "0");
+              } catch {
+                /* remembering is optional */
+              }
+            }}
+          />{" "}
+          Update emulators automatically
+        </label>
+      </section>
+
+      <section className="section">
+        <h2>Removed games</h2>
+        <p className="muted">
+          Games you removed from the library stay out of it, even when a folder is scanned again. Their files are never
+          deleted. Restore one to bring it back.
+        </p>
+        {removed.length === 0 ? (
+          <p className="muted">Nothing removed.</p>
+        ) : (
+          removed.map((g) => (
+            <div key={g.id} className="folder">
+              <span>
+                {g.title} <span className="muted small">{g.path}</span>
+              </span>
+              <button className="btn" onClick={() => act(() => invoke("restore_game", { id: g.id }), "Game restored.")}>
+                Restore
+              </button>
+            </div>
+          ))
+        )}
+      </section>
+
+      <section className="section">
+        <h2>About and troubleshooting</h2>
+        <p className="muted">
+          Trayload {info?.version ?? ""} keeps a small log file on this PC to help find problems. Nothing is ever sent
+          anywhere.
+        </p>
+        <div className="row wrap">
+          <button className="btn" onClick={() => act(() => invoke("open_logs_folder"), "Opened the log folder.")}>
+            Open log folder
+          </button>
+        </div>
+        {info && <div className="muted small folder-path">{info.dataFolder}</div>}
       </section>
     </>
   );

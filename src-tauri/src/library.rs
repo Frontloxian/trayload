@@ -606,6 +606,35 @@ pub fn remove_game(db: tauri::State<'_, Db>, id: i64) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemovedGame {
+    id: i64,
+    title: String,
+    system_id: String,
+    path: String,
+}
+
+/// Games you removed from the library earlier, so they can be brought back.
+#[tauri::command]
+pub fn list_removed_games(db: tauri::State<'_, Db>) -> Result<Vec<RemovedGame>, String> {
+    let conn = lock(&db)?;
+    let mut st = conn
+        .prepare("SELECT id, title, system_id, path FROM games WHERE removed = 1 ORDER BY title COLLATE NOCASE")
+        .map_err(e)?;
+    let rows = st
+        .query_map([], |r| Ok(RemovedGame { id: r.get(0)?, title: r.get(1)?, system_id: r.get(2)?, path: r.get(3)? }))
+        .map_err(e)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(e)
+}
+
+#[tauri::command]
+pub fn restore_game(db: tauri::State<'_, Db>, id: i64) -> Result<(), String> {
+    let conn = lock(&db)?;
+    conn.execute("UPDATE games SET removed = 0 WHERE id = ?1", [id]).map_err(e)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

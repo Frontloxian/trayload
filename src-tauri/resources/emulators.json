@@ -21,7 +21,23 @@
    "exePattern": "^Mesen\\.exe$",
    "launchArgs": [
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "Nintendo NES and Famicom games run without extra files.",
+    "items": [
+     {
+      "label": "Famicom Disk System BIOS (disksys.rom)",
+      "required": false,
+      "namePattern": "^disksys\\.rom$",
+      "sizes": [
+       8192
+      ],
+      "deep": true,
+      "note": "Optional. Only for Famicom Disk System games. Put it in the Firmware folder."
+     }
+    ]
+   }
   },
   {
    "id": "snes",
@@ -43,7 +59,20 @@
    "exePattern": "^Mesen\\.exe$",
    "launchArgs": [
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "Most Super Nintendo games run without extra files.",
+    "items": [
+     {
+      "label": "Extra-chip firmware (dsp1.rom, st010.rom and similar)",
+      "required": false,
+      "namePattern": "^(dsp[1-4]b?|st01[018]|cx4)\\.(rom|bin)$",
+      "deep": true,
+      "note": "Optional. Only a few games with special chips ask for these."
+     }
+    ]
+   }
   },
   {
    "id": "gb",
@@ -66,7 +95,12 @@
    "artRepos": [
     "Nintendo_-_Game_Boy",
     "Nintendo_-_Game_Boy_Color"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "Game Boy and Game Boy Color games run without a BIOS. A real boot ROM is optional.",
+    "items": []
+   }
   },
   {
    "id": "gba",
@@ -87,7 +121,23 @@
    ],
    "artRepos": [
     "Nintendo_-_Game_Boy_Advance"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "mGBA has a built-in replacement BIOS, so games run without one. A real GBA BIOS is optional.",
+    "items": [
+     {
+      "label": "GBA BIOS (gba_bios.bin)",
+      "required": false,
+      "namePattern": "^gba_bios\\.bin$",
+      "sizes": [
+       16384
+      ],
+      "deep": true,
+      "note": "Optional. Pick it in mGBA under Tools, Settings, BIOS."
+     }
+    ]
+   }
   },
   {
    "id": "n64",
@@ -109,7 +159,12 @@
    "exePattern": "^RMG\\.exe$",
    "launchArgs": [
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "Nintendo 64 games run without extra files.",
+    "items": []
+   }
   },
   {
    "id": "nds",
@@ -130,7 +185,43 @@
    "exePattern": "^melonDS\\.exe$",
    "launchArgs": [
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "melonDS has a built-in replacement BIOS and firmware, so games run without these. Real files are optional and improve compatibility.",
+    "items": [
+     {
+      "label": "DS ARM7 BIOS (bios7.bin)",
+      "required": false,
+      "namePattern": "^bios7\\.bin$",
+      "sizes": [
+       16384
+      ],
+      "deep": true
+     },
+     {
+      "label": "DS ARM9 BIOS (bios9.bin)",
+      "required": false,
+      "namePattern": "^bios9\\.bin$",
+      "sizes": [
+       4096
+      ],
+      "deep": true
+     },
+     {
+      "label": "DS firmware (firmware.bin)",
+      "required": false,
+      "namePattern": "^firmware\\.bin$",
+      "sizes": [
+       131072,
+       262144,
+       524288
+      ],
+      "deep": true,
+      "note": "Set the paths in melonDS under Config, Emu settings, DS-mode."
+     }
+    ]
+   }
   },
   {
    "id": "3ds",
@@ -153,7 +244,20 @@
    "launchArgs": [
     "{rom}"
    ],
-   "portableMarker": "user/"
+   "portableMarker": "user/",
+   "setup": {
+    "folder": "user",
+    "intro": "Most 3DS games run without extra files.",
+    "items": [
+     {
+      "label": "Encrypted-game keys (aes_keys.txt)",
+      "required": false,
+      "namePattern": "^aes_keys\\.txt$",
+      "deep": true,
+      "note": "Optional. Only for games that are still encrypted. Put it in the sysdata folder."
+     }
+    ]
+   }
   },
   {
    "id": "gc",
@@ -220,7 +324,12 @@
    ],
    "artRepos": [
     "Nintendo_-_Wii"
-   ]
+   ],
+   "setup": {
+    "folder": "User",
+    "intro": "Wii games run without extra files.",
+    "items": []
+   }
   },
   {
    "id": "wiiu",
@@ -245,7 +354,20 @@
     "-g",
     "{rom}"
    ],
-   "portableMarker": "portable/"
+   "portableMarker": "portable/",
+   "setup": {
+    "folder": ".",
+    "intro": "Cemu needs the Wii U keys file to open encrypted game dumps. Decrypted dumps don't need it.",
+    "items": [
+     {
+      "label": "Wii U keys (keys.txt)",
+      "required": false,
+      "namePattern": "^keys\\.txt$",
+      "deep": true,
+      "note": "Optional if your games are decrypted. Use keys from your own console. Put it next to Cemu.exe."
+     }
+    ]
+   }
   },
   {
    "id": "switch",
@@ -301,7 +423,12 @@
    },
    "exts": [],
    "exePattern": "^lichii.*\\.exe$",
-   "warning": "Experimental. Switch 2 emulation is very early: expect crashes, missing games and changes without notice. It needs keys and firmware from your own console. Trayload downloads it only from github.com/zortos293/Lichii, and games can't be started from Trayload yet."
+   "warning": "Experimental. Switch 2 emulation is very early: expect crashes, missing games and changes without notice. It needs keys and firmware from your own console. Trayload downloads it only from github.com/zortos293/Lichii, and games can't be started from Trayload yet.",
+   "setup": {
+    "folder": ".",
+    "intro": "Switch 2 emulation is experimental and the exact files it needs aren't settled yet. Expect it to need keys and firmware from your own console.",
+    "items": []
+   }
   },
   {
    "id": "ps1",
@@ -403,7 +530,20 @@
    "launchArgs": [
     "--no-gui",
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": "dev_flash",
+    "intro": "RPCS3 needs the PS3 system software from your own console, installed from RPCS3 under File, Install Firmware.",
+    "items": [
+     {
+      "label": "PS3 system software (installed)",
+      "required": true,
+      "namePattern": "^liblv2\\.sprx$",
+      "deep": true,
+      "note": "Found after the firmware is installed. This check is a best guess."
+     }
+    ]
+   }
   },
   {
    "id": "psp",
@@ -427,7 +567,12 @@
    "portableMarker": "memstick/",
    "launchArgs": [
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "PSP games run without extra files.",
+    "items": []
+   }
   },
   {
    "id": "vita",
@@ -444,7 +589,20 @@
    "artRepos": [
     "Sony_-_PlayStation_Vita"
    ],
-   "exePattern": "^Vita3K\\.exe$"
+   "exePattern": "^Vita3K\\.exe$",
+   "setup": {
+    "folder": ".",
+    "intro": "Vita3K needs the PS Vita firmware and font package from your own console, installed from Vita3K under File.",
+    "items": [
+     {
+      "label": "PS Vita firmware (installed)",
+      "required": false,
+      "namePattern": "^libSceLibc\\.suprx$",
+      "deep": true,
+      "note": "Found after the firmware is installed. This check is a best guess, so it never blocks anything."
+     }
+    ]
+   }
   },
   {
    "id": "dc",
@@ -510,7 +668,39 @@
    "launchArgs": [
     "-dvd_path",
     "{rom}"
-   ]
+   ],
+   "setup": {
+    "folder": ".",
+    "intro": "xemu needs three files from your own original Xbox: the boot ROM, the BIOS and a hard drive image. Set their paths in xemu under System.",
+    "items": [
+     {
+      "label": "MCPX boot ROM",
+      "required": true,
+      "namePattern": "^mcpx.*\\.bin$",
+      "sizes": [
+       512
+      ],
+      "deep": true
+     },
+     {
+      "label": "Xbox BIOS (flash ROM)",
+      "required": true,
+      "namePattern": "\\.bin$",
+      "sizes": [
+       262144,
+       524288,
+       1048576
+      ],
+      "deep": true
+     },
+     {
+      "label": "Hard drive image",
+      "required": true,
+      "namePattern": "\\.qcow2$",
+      "deep": true
+     }
+    ]
+   }
   },
   {
    "id": "x360",
@@ -532,7 +722,12 @@
    "launchArgs": [
     "{rom}"
    ],
-   "portableMarker": "portable.txt"
+   "portableMarker": "portable.txt",
+   "setup": {
+    "folder": ".",
+    "intro": "Xenia Canary runs without BIOS or firmware files.",
+    "items": []
+   }
   },
   {
    "id": "arcade",
@@ -548,7 +743,20 @@
    ],
    "artRepos": [
     "MAME"
-   ]
+   ],
+   "setup": {
+    "folder": "roms",
+    "intro": "MAME needs a ROM set (a .zip per game) that matches its version. Trayload doesn't provide or link them.",
+    "items": [
+     {
+      "label": "Arcade ROM sets (.zip files)",
+      "required": false,
+      "namePattern": "\\.zip$",
+      "deep": true,
+      "note": "Optional here. Put them in the roms folder."
+     }
+    ]
+   }
   }
  ],
  "pending": "Still to add: MAME, and the Sega/Atari/NEC/etc. systems via RetroArch. PS5 is watch-only: follow it in the News tab, no install entry."

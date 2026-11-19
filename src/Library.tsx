@@ -135,6 +135,11 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
     invoke("play_game", { id: g.id }).catch((e) => setError(String(e)));
   };
 
+  const removeGame = (g: Game) => {
+    if (!window.confirm(`Remove "${g.title}" from the library?\n\nThe game file itself is not deleted. You can bring it back in Settings.`)) return;
+    run(() => invoke("remove_game", { id: g.id }));
+  };
+
   const toggleFavorite = (g: Game) =>
     run(() => invoke("set_favorite", { id: g.id, favorite: !g.favorite }));
 
@@ -410,6 +415,7 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
                     onPlay={() => play(g)}
                     onOpen={() => onOpen(g.id)}
                     onFavorite={() => toggleFavorite(g)}
+                    onRemove={() => removeGame(g)}
                   />
                 ))}
               </ul>

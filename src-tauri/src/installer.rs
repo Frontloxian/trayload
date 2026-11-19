@@ -323,7 +323,7 @@ async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, Str
             match (scraped, fallback_url) {
                 (Ok(r), _) => Ok(r),
                 (Err(err), Some(fb)) => {
-                    eprintln!("[installer] page lookup failed ({err}); using the pinned link from the registry");
+                    crate::applog!("[installer] page lookup failed ({err}); using the pinned link from the registry");
                     check_host(fb)?;
                     Ok(from_link(fb))
                 }
@@ -544,7 +544,7 @@ pub async fn install_emulator(
     let res = do_install(&app, &id).await;
     state.0.lock().unwrap().remove(&id);
     if let Err(e) = &res {
-        eprintln!("[installer] {id}: {e}");
+        crate::applog!("[installer] {id}: {e}");
     }
     res
 }

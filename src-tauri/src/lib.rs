@@ -1,3 +1,5 @@
+#[macro_use]
+mod applog;
 mod art;
 mod collections;
 mod installer;
@@ -7,6 +9,7 @@ mod music;
 mod news;
 mod setup;
 mod registry;
+mod secrets;
 
 use tauri::{Emitter, Manager};
 
@@ -24,7 +27,9 @@ pub fn run() {
         .manage(library::LastScan::default())
         .manage(launcher::Running::default())
         .setup(|app| {
+            applog::init(app.handle());
             let db = library::open(app.handle())?;
+            secrets::migrate(&db, "steamgriddb", "steamgriddb_key");
             launcher::recover_sessions(&db)?;
             app.manage(db.clone());
             // Scan the ROM folders once at every launch, in the background.
@@ -32,7 +37,7 @@ pub fn run() {
             tauri::async_runtime::spawn(art::worker(handle.clone(), db.clone()));
             std::thread::spawn(move || {
                 if let Err(err) = library::rescan_blocking(&handle, &db) {
-                    eprintln!("[scan] {err}");
+                    crate::applog!("[scan] {err}");
                     let _ = handle.emit("scan-error", err);
                 }
             });
@@ -77,6 +82,11 @@ pub fn run() {
             music::open_music_folder,
             music::add_music_pack,
             music::remove_music_pack,
+            applog::get_app_info,
+            applog::open_logs_folder,
+            applog::log_frontend_error,
+            library::list_removed_games,
+            library::restore_game,
             news::get_news,
             news::open_news_link,
             setup::check_setup,

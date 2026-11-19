@@ -229,6 +229,9 @@ async fn find_art(
 // ---------- storage ----------
 
 fn get_key(db: &Db) -> Option<String> {
+    if let Some(k) = crate::secrets::get("steamgriddb") {
+        return Some(k);
+    }
     let conn = db.0.lock().ok()?;
     conn.query_row("SELECT value FROM settings WHERE key = 'steamgriddb_key'", [], |r| r.get::<_, String>(0))
         .optional()
@@ -293,7 +296,7 @@ async fn process(app: &AppHandle, db: &Db, job: Job) {
     let reg = match registry::load(app) {
         Ok(r) => r,
         Err(er) => {
-            eprintln!("[art] {er}");
+            crate::applog!("[art] {er}");
             mark(db, job.id, "none");
             return;
         }
@@ -306,7 +309,7 @@ async fn process(app: &AppHandle, db: &Db, job: Job) {
     let client = match client() {
         Ok(c) => c,
         Err(er) => {
-            eprintln!("[art] {er}");
+            crate::applog!("[art] {er}");
             return;
         }
     };
@@ -316,13 +319,13 @@ async fn process(app: &AppHandle, db: &Db, job: Job) {
                 let _ = app.emit("art-updated", job.id);
             }
             Err(er) => {
-                eprintln!("[art] could not save art for {}: {er}", job.title);
+                crate::applog!("[art] could not save art for {}: {er}", job.title);
                 mark(db, job.id, "none");
             }
         },
         Ok(None) => mark(db, job.id, "notfound"),
         Err(er) => {
-            eprintln!("[art] {}: {er}", job.title);
+            crate::applog!("[art] {}: {er}", job.title);
             mark(db, job.id, "none");
         }
     }
@@ -339,7 +342,7 @@ pub async fn worker(app: AppHandle, db: Db) {
             }
             Ok(None) => tokio::time::sleep(Duration::from_secs(5)).await,
             Err(er) => {
-                eprintln!("[art] {er}");
+                crate::applog!("[art] {er}");
                 tokio::time::sleep(Duration::from_secs(15)).await;
             }
         }
@@ -372,11 +375,19 @@ fn reset_retries(db: &Db) -> Result<(), String> {
 #[tauri::command]
 pub fn set_steamgriddb_key(db: tauri::State<'_, Db>, key: String) -> Result<(), String> {
     {
-        let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
         let key = key.trim();
-        if key.is_empty() {
+        let in_store = if key.is_empty() {
+            crate::secrets::delete("steamgriddb");
+            false
+        } else {
+            crate::secrets::set("steamgriddb", key).is_ok()
+        };
+        let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
+        if in_store || key.is_empty() {
+            // Stored safely (or cleared): make sure no copy is left in the database.
             conn.execute("DELETE FROM settings WHERE key = 'steamgriddb_key'", []).map_err(e)?;
         } else {
+            crate::applog!("[secrets] credential store unavailable; keeping the key in the library database");
             conn.execute(
                 "INSERT INTO settings (key, value) VALUES ('steamgriddb_key', ?1)
                  ON CONFLICT(key) DO UPDATE SET value = excluded.value",
