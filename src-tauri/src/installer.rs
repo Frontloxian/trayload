@@ -139,6 +139,34 @@ struct Resolved {
     version: String,
 }
 
+fn from_link(link: &str) -> Resolved {
+    let file_name = link.rsplit('/').next().unwrap_or("download").to_string();
+    let version = file_name.trim_end_matches(".7z").trim_end_matches(".zip").to_string();
+    Resolved { url: link.to_string(), file_name, version }
+}
+
+async fn resolve_page(client: &reqwest::Client, url: &str, pat: &str) -> Result<Resolved, String> {
+    check_host(url)?;
+    let re = RegexBuilder::new(pat)
+        .case_insensitive(true)
+        .build()
+        .map_err(|e| format!("bad assetPattern: {e}"))?;
+    let body = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("page request failed: {e}"))?
+        .error_for_status()
+        .map_err(|e| format!("page said: {e}"))?
+        .text()
+        .await
+        .map_err(|e| e.to_string())?;
+    let m = re.find(&body).ok_or("no link on the download page matched the pattern")?;
+    let link = m.as_str();
+    check_host(link)?;
+    Ok(from_link(link))
+}
+
 async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, String> {
     match src {
         Source::Github { repo, asset_pattern } => {
@@ -174,29 +202,20 @@ async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, Str
                 names.join(", ")
             ))
         }
-        Source::Page { url, asset_pattern } => {
-            let pat = asset_pattern.as_deref().ok_or("this page source has no assetPattern yet")?;
-            check_host(url)?;
-            let re = RegexBuilder::new(pat)
-                .case_insensitive(true)
-                .build()
-                .map_err(|e| format!("bad assetPattern: {e}"))?;
-            let body = client
-                .get(url)
-                .send()
-                .await
-                .map_err(|e| format!("page request failed: {e}"))?
-                .error_for_status()
-                .map_err(|e| format!("page said: {e}"))?
-                .text()
-                .await
-                .map_err(|e| e.to_string())?;
-            let m = re.find(&body).ok_or("no link on the download page matched the pattern")?;
-            let link = m.as_str().to_string();
-            check_host(&link)?;
-            let file_name = link.rsplit('/').next().unwrap_or("download").to_string();
-            let version = file_name.trim_end_matches(".7z").trim_end_matches(".zip").to_string();
-            Ok(Resolved { url: link, file_name, version })
+        Source::Page { url, asset_pattern, fallback_url } => {
+            let scraped = match asset_pattern.as_deref() {
+                Some(pat) => resolve_page(client, url, pat).await,
+                None => Err("this page source has no assetPattern".to_string()),
+            };
+            match (scraped, fallback_url) {
+                (Ok(r), _) => Ok(r),
+                (Err(err), Some(fb)) => {
+                    eprintln!("[installer] page lookup failed ({err}); using the pinned link from the registry");
+                    check_host(fb)?;
+                    Ok(from_link(fb))
+                }
+                (Err(err), None) => Err(err),
+            }
         }
     }
 }

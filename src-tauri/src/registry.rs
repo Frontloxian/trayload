@@ -23,6 +23,8 @@ pub enum Source {
         url: String,
         #[serde(rename = "assetPattern", default)]
         asset_pattern: Option<String>,
+        #[serde(rename = "fallbackUrl", default)]
+        fallback_url: Option<String>,
     },
 }
 
