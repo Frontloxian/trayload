@@ -115,3 +115,40 @@ export interface ScanSummary {
   restored: number;
   missing: number;
 }
+
+export interface UpdateInfo {
+  id: string;
+  installed: string;
+  latest: string;
+}
+
+export interface NewsItem {
+  sourceId: string;
+  source: string;
+  tier: "release" | "official" | "community";
+  title: string;
+  link: string;
+  date: string;
+}
+
+export interface NewsSource {
+  id: string;
+  name: string;
+  tier: string;
+  ok: boolean;
+  error: string | null;
+}
+
+export interface WatchDef {
+  id: string;
+  title: string;
+  note: string;
+  keywords: string[];
+}
+
+export interface NewsPayload {
+  fetchedAt: number;
+  items: NewsItem[];
+  sources: NewsSource[];
+  watch: WatchDef[];
+}

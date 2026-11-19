@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { EmulatorEntry, InstallProgress } from "./types";
+import type { EmulatorEntry, InstallProgress, UpdateInfo } from "./types";
 
 const mb = (n: number) => (n / 1048576).toFixed(1);
 
-export default function Emulators() {
+export default function Emulators({ updates, onChanged }: { updates: UpdateInfo[]; onChanged: () => void }) {
   const [items, setItems] = useState<EmulatorEntry[]>([]);
   const [progress, setProgress] = useState<Record<string, InstallProgress>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -66,6 +66,7 @@ export default function Emulators() {
         return n;
       });
       refresh();
+      onChanged();
     }
   }
 
@@ -90,6 +91,7 @@ export default function Emulators() {
       setErr(e.id, String(err));
     }
     refresh();
+    onChanged();
   }
 
   return (
@@ -105,6 +107,7 @@ export default function Emulators() {
           .map((e) => {
           const p = progress[e.id];
           const busy = !!p;
+          const upd = updates.find((u) => u.id === e.id);
           const pct = p && p.total > 0 ? Math.min(100, (p.downloaded / p.total) * 100) : 0;
           return (
             <li key={e.id} className="card">
@@ -126,7 +129,10 @@ export default function Emulators() {
                           : "Looking up latest version…"}
                     </span>
                   ) : e.installed ? (
-                    <span className="pill green">Installed {e.installed.version}</span>
+                    <>
+                      <span className="pill green">Installed {e.installed.version}</span>
+                      {upd && <span className="pill amber update-pill"> Update ready: {upd.latest}</span>}
+                    </>
                   ) : e.installable ? (
                     <span className="pill muted">Not installed</span>
                   ) : (
@@ -141,7 +147,7 @@ export default function Emulators() {
                   )}
                   {e.installable && (
                     <button className="btn" disabled={busy} onClick={() => install(e)}>
-                      {e.installed ? "Reinstall" : "Install"}
+                      {upd ? "Update" : e.installed ? "Reinstall" : "Install"}
                     </button>
                   )}
                   {e.installed && (

@@ -480,6 +480,43 @@ pub fn list_emulators(app: AppHandle) -> Result<Vec<EmulatorEntry>, String> {
     Ok(out)
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateInfo {
+    pub id: String,
+    pub installed: String,
+    pub latest: String,
+}
+
+/// Looks up the newest version of every installed emulator and reports the ones that differ.
+/// A failed lookup for one emulator is skipped quietly.
+#[tauri::command]
+pub async fn check_updates(app: AppHandle) -> Result<Vec<UpdateInfo>, String> {
+    let reg = registry::load(&app)?;
+    let client = http_client()?;
+    let mut seen: Vec<String> = vec![];
+    let mut jobs = vec![];
+    for s in &reg.systems {
+        let id = slug(&s.emulator);
+        if seen.contains(&id) {
+            continue;
+        }
+        seen.push(id.clone());
+        let Some(inst) = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d)) else { continue };
+        jobs.push((id, inst.version, s.source.clone()));
+    }
+    let results = futures_util::future::join_all(jobs.iter().map(|(_, _, src)| resolve(&client, src))).await;
+    let mut out = vec![];
+    for ((id, installed, _), r) in jobs.into_iter().zip(results) {
+        if let Ok(res) = r {
+            if res.version != installed {
+                out.push(UpdateInfo { id, installed, latest: res.version });
+            }
+        }
+    }
+    Ok(out)
+}
+
 #[tauri::command]
 pub async fn install_emulator(
     app: AppHandle,

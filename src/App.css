@@ -134,3 +134,23 @@ h1 { margin: 0; font-size: 26px; }
 .pill.purple { background: #2a1f5a; color: #c4b5fd; margin-left: 4px; }
 .toggle { display: inline-block; margin: 0 0 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
 .warn { margin: 8px 0 0; line-height: 1.5; }
+
+.badge { margin-left: 8px; background: #f5c04d; color: #1a1400; border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
+.update-pill { margin-left: 4px; }
+.update-card, .watch-card { margin-bottom: 12px; }
+.update-card { display: grid; gap: 6px; justify-items: start; border-color: #f5c04d; }
+.watch-card p { margin: 6px 0; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0 8px; flex-wrap: wrap; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { background: #1a2342; color: var(--text); border: 1px solid #2a3a6b; border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); }
+.chip:focus-visible { outline: 2px solid var(--accent); }
+.news-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.news-list.compact { margin: 4px 0 0; }
+.news-item { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+.news-item.community { border-style: dashed; }
+.link { all: unset; color: var(--accent); cursor: pointer; }
+.link:hover { text-decoration: underline; }
+.link:focus-visible { outline: 2px solid var(--accent); }
+.news-title { display: block; font-weight: 600; margin-bottom: 4px; }
+.row { display: flex; gap: 8px; align-items: center; }

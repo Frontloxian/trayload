@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { Registry } from "./types";
+import type { Registry, UpdateInfo } from "./types";
 import Emulators from "./Emulators";
 import GameDetail from "./GameDetail";
 import Library from "./Library";
+import News from "./News";
 import Settings from "./Settings";
 import Setup from "./Setup";
 import "./App.css";
@@ -26,6 +27,14 @@ export default function App() {
   const [dragging, setDragging] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [libKey, setLibKey] = useState(0);
+  const [updates, setUpdates] = useState<UpdateInfo[]>([]);
+
+  const checkUpdates = () => {
+    invoke<UpdateInfo[]>("check_updates").then(setUpdates).catch(() => setUpdates([]));
+  };
+
+  // Look for newer emulator versions once at launch, quietly in the background.
+  useEffect(checkUpdates, []);
 
   useEffect(() => {
     invoke<Registry>("get_registry").then(setRegistry).catch((e) => setError(String(e)));
@@ -70,6 +79,11 @@ export default function App() {
               setDetailId(null);
             }}>
             {n.label}
+            {n.id === "emulators" && updates.length > 0 && (
+              <span className="badge" title="Updates ready">
+                {updates.length}
+              </span>
+            )}
           </button>
         ))}
         <div className="spacer" />
@@ -86,7 +100,7 @@ export default function App() {
         {error && <p className="error">{error}</p>}
 
         {page === "emulators" ? (
-          <Emulators />
+          <Emulators updates={updates} onChanged={checkUpdates} />
         ) : page === "library" ? (
           <>
             {detailId !== null && (
@@ -105,6 +119,8 @@ export default function App() {
           </>
         ) : page === "setup" ? (
           <Setup onEmulators={() => setPage("emulators")} />
+        ) : page === "news" ? (
+          <News updates={updates} onEmulators={() => setPage("emulators")} />
         ) : page === "settings" ? (
           <Settings />
         ) : (

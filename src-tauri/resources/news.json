@@ -1,0 +1,15 @@
+{
+  "feeds": [
+    { "id": "dolphin-blog", "name": "Dolphin blog", "tier": "official", "url": "https://dolphin-emu.org/blog/feeds/" },
+    { "id": "r-emulation", "name": "r/emulation", "tier": "community", "url": "https://www.reddit.com/r/emulation/.rss" },
+    { "id": "r-emudev", "name": "r/EmuDev", "tier": "community", "url": "https://www.reddit.com/r/EmuDev/.rss" }
+  ],
+  "watch": [
+    {
+      "id": "ps5",
+      "title": "PlayStation 5",
+      "note": "No working PS5 emulator exists yet. Trayload only follows the news here and will add one when a real, official release appears.",
+      "keywords": ["ps5", "playstation 5"]
+    }
+  ]
+}

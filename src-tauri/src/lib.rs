@@ -3,6 +3,7 @@ mod collections;
 mod installer;
 mod launcher;
 mod library;
+mod news;
 mod setup;
 mod registry;
 
@@ -69,6 +70,9 @@ pub fn run() {
             collections::set_game_in_collection,
             collections::get_game_details,
             collections::save_overrides,
+            installer::check_updates,
+            news::get_news,
+            news::open_news_link,
             setup::check_setup,
             setup::open_setup_folder,
         ])
