@@ -34,6 +34,16 @@
         "ps5",
         "playstation 5"
       ]
+    },
+    {
+      "id": "switch2",
+      "title": "Nintendo Switch 2 (Lichii)",
+      "note": "Lichii, an early Switch 2 emulator, is on hold. Games can't be started from Trayload yet, so it isn't offered for install. Trayload follows the news here and will add it back once it works properly.",
+      "keywords": [
+        "lichii",
+        "switch 2",
+        "switch2"
+      ]
     }
   ]
 }
