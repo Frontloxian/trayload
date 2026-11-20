@@ -32,6 +32,7 @@ export interface EmulatorEntry {
   systems: string[];
   installable: boolean;
   installed: InstalledInfo | null;
+  leftover?: boolean;
   tier: string | null;
   warning: string | null;
 }

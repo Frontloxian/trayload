@@ -103,7 +103,7 @@ export default function Emulators({ updates, onChanged }: { updates: UpdateInfo[
       </label>
       <ul className="cards">
         {items
-          .filter((e) => e.tier !== "experimental" || showExp || e.installed)
+          .filter((e) => e.tier !== "experimental" || showExp || e.installed || e.leftover)
           .map((e) => {
           const p = progress[e.id];
           const busy = !!p;
@@ -134,6 +134,8 @@ export default function Emulators({ updates, onChanged }: { updates: UpdateInfo[
                       <span className="pill green">Installed {e.installed.version}</span>
                       {upd && <span className="pill amber update-pill"> Update ready: {upd.latest}</span>}
                     </>
+                  ) : e.leftover ? (
+                    <span className="pill amber">Incomplete install</span>
                   ) : e.installable ? (
                     <span className="pill muted">Not installed</span>
                   ) : (
@@ -151,9 +153,9 @@ export default function Emulators({ updates, onChanged }: { updates: UpdateInfo[
                       {upd ? "Update" : e.installed ? "Reinstall" : "Install"}
                     </button>
                   )}
-                  {e.installed && (
+                  {(e.installed || e.leftover) && (
                     <button className="btn danger" disabled={busy} onClick={() => uninstall(e)}>
-                      Uninstall
+                      {e.installed ? "Uninstall" : "Remove files"}
                     </button>
                   )}
                 </div>

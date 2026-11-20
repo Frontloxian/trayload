@@ -56,6 +56,8 @@ pub struct EmulatorEntry {
     pub systems: Vec<String>,
     pub installable: bool,
     pub installed: Option<InstalledInfo>,
+    /// A folder exists but has no valid install marker (a half-finished or interrupted install).
+    pub leftover: bool,
     pub tier: Option<String>,
     pub warning: Option<String>,
 }
@@ -518,12 +520,14 @@ pub fn list_emulators(app: AppHandle) -> Result<Vec<EmulatorEntry>, String> {
             Source::Page { asset_pattern, .. } => asset_pattern.is_some(),
         };
         let installed = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d));
+        let leftover = installed.is_none() && emu_dir(&app, &id).map(|d| d.exists()).unwrap_or(false);
         out.push(EmulatorEntry {
             id,
             name: s.emulator.clone(),
             systems: vec![s.name.clone()],
             installable: source_ready && s.exe_pattern.is_some(),
             installed,
+            leftover,
             tier: s.tier.clone(),
             warning: s.warning.clone(),
         });
@@ -863,6 +867,46 @@ pub fn launch_emulator(app: AppHandle, id: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Removes a folder even if some files are read-only, retrying a few times for files that are briefly locked.
+fn remove_dir_robust(dir: &Path) -> Result<(), String> {
+    fn clear_readonly(p: &Path) {
+        if let Ok(rd) = fs::read_dir(p) {
+            for e in rd.flatten() {
+                let path = e.path();
+                if let Ok(meta) = fs::symlink_metadata(&path) {
+                    let mut perms = meta.permissions();
+                    if perms.readonly() {
+                        #[allow(clippy::permissions_set_readonly_false)]
+                        perms.set_readonly(false);
+                        let _ = fs::set_permissions(&path, perms);
+                    }
+                    if meta.is_dir() {
+                        clear_readonly(&path);
+                    }
+                }
+            }
+        }
+    }
+    let mut last = String::new();
+    for attempt in 0..4 {
+        match fs::remove_dir_all(dir) {
+            Ok(()) => return Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => {
+                last = e.to_string();
+                clear_readonly(dir);
+                if attempt < 3 {
+                    std::thread::sleep(std::time::Duration::from_millis(400));
+                }
+            }
+        }
+    }
+    Err(format!(
+        "could not remove {} ({last}). If the emulator is still open, close it and try again.",
+        dir.display()
+    ))
+}
+
 #[tauri::command]
 pub fn uninstall_emulator(app: AppHandle, id: String) -> Result<(), String> {
     let dir = emu_dir(&app, &id)?;
@@ -874,7 +918,7 @@ pub fn uninstall_emulator(app: AppHandle, id: String) -> Result<(), String> {
     let prev = root.join(format!("{id}.prev"));
     for d in [dir, prev] {
         if d.exists() {
-            fs::remove_dir_all(&d).map_err(|e| format!("could not remove {}: {e}", d.display()))?;
+            remove_dir_robust(&d)?;
         }
     }
     if let Some(dll) = core_dll {
@@ -898,7 +942,7 @@ pub fn uninstall_emulator(app: AppHandle, id: String) -> Result<(), String> {
         if !others {
             let ra = root.join(RETROARCH_ID);
             if ra.exists() {
-                fs::remove_dir_all(&ra).map_err(|e| format!("could not remove RetroArch: {e}"))?;
+                remove_dir_robust(&ra)?;
             }
         }
     }
