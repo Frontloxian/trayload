@@ -556,6 +556,10 @@ pub async fn check_updates(app: AppHandle) -> Result<Vec<UpdateInfo>, String> {
         let Some(inst) = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d)) else { continue };
         jobs.push((id, inst.version, s.source.clone()));
     }
+    // The shared RetroArch frontend updates on its own, apart from its cores.
+    if let Some(ra) = read_installed(&emulators_dir(&app)?.join(RETROARCH_ID)) {
+        jobs.push((RETROARCH_ID.to_string(), ra.version, Source::Direct { url: RETROARCH_URL.to_string() }));
+    }
     let results = futures_util::future::join_all(jobs.iter().map(|(_, _, src)| resolve(&client, src))).await;
     let mut out = vec![];
     for ((id, installed, _), r) in jobs.into_iter().zip(results) {
@@ -591,6 +595,9 @@ pub async fn install_emulator(
 async fn do_install(app: &AppHandle, id: &str) -> Result<InstalledInfo, String> {
     if !valid_id(id) {
         return Err("invalid emulator id".into());
+    }
+    if id == RETROARCH_ID {
+        return update_retroarch(app).await;
     }
     let reg = registry::load(app)?;
     let sys = reg
@@ -698,6 +705,76 @@ async fn install_package(
     .map_err(|e| e.to_string())??;
 
     progress(app, ui_id, "done", 0, 0);
+    Ok(info)
+}
+
+/// Folders in RetroArch that belong to you or to your cores. An update never touches them.
+const RA_KEEP: &[&str] = &["saves", "states", "system", "screenshots", "playlists", "thumbnails", "cores", "config", "logs", "retroarch.cfg"];
+
+fn copy_over(src_root: &Path, dir: &Path, dst_root: &Path) -> Result<(), String> {
+    for entry in fs::read_dir(dir).map_err(|e| e.to_string())?.flatten() {
+        let p = entry.path();
+        let rel = p.strip_prefix(src_root).map_err(|e| e.to_string())?;
+        let first = rel.components().next().map(|c| c.as_os_str().to_string_lossy().to_lowercase()).unwrap_or_default();
+        if RA_KEEP.contains(&first.as_str()) {
+            continue;
+        }
+        let dst = dst_root.join(rel);
+        if p.is_dir() {
+            fs::create_dir_all(&dst).map_err(|e| e.to_string())?;
+            copy_over(src_root, &p, dst_root)?;
+        } else {
+            fs::copy(&p, &dst).map_err(|e| format!("could not update {} (is RetroArch running?): {e}", rel.display()))?;
+        }
+    }
+    Ok(())
+}
+
+/// Updates RetroArch in place. Your cores, saves, states, BIOS files and settings stay where they are.
+async fn update_retroarch(app: &AppHandle) -> Result<InstalledInfo, String> {
+    let emu_root = emulators_dir(app)?;
+    let ra_dir = emu_root.join(RETROARCH_ID);
+    let old = read_installed(&ra_dir).ok_or("RetroArch is not installed")?;
+    let client = http_client()?;
+    progress(app, RETROARCH_ID, "resolving", 0, 0);
+    let r = resolve(&client, &Source::Direct { url: RETROARCH_URL.to_string() }).await?;
+    if r.version == old.version {
+        progress(app, RETROARCH_ID, "done", 0, 0);
+        return Ok(old);
+    }
+    let dl_dir = data_dir(app)?.join("downloads");
+    tokio::fs::create_dir_all(&dl_dir).await.map_err(|e| e.to_string())?;
+    let archive = dl_dir.join(&r.file_name);
+    download(app, &client, RETROARCH_ID, &r, &archive).await?;
+    progress(app, RETROARCH_ID, "extracting", 0, 0);
+    let staging = emu_root.join("retroarch.staging");
+    let version = r.version.clone();
+    let archive2 = archive.clone();
+    let info = tokio::task::spawn_blocking(move || -> Result<InstalledInfo, String> {
+        if staging.exists() {
+            fs::remove_dir_all(&staging).map_err(|e| e.to_string())?;
+        }
+        let result = (|| {
+            extract(&archive2, &staging)?;
+            verify_tree(&staging)?;
+            let root = content_root(&staging)?;
+            copy_over(&root, &root, &ra_dir)?;
+            let info = InstalledInfo {
+                version,
+                installed_at: SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+                ..old
+            };
+            fs::write(ra_dir.join(".trayload.json"), serde_json::to_vec_pretty(&info).map_err(|e| e.to_string())?)
+                .map_err(|e| e.to_string())?;
+            Ok(info)
+        })();
+        let _ = fs::remove_dir_all(&staging);
+        let _ = fs::remove_file(&archive2);
+        result
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    progress(app, RETROARCH_ID, "done", 0, 0);
     Ok(info)
 }
 

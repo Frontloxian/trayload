@@ -115,6 +115,13 @@ pub fn play_game(
         .launch_args
         .clone()
         .ok_or_else(|| format!("{} can't be started from Trayload yet.", sys.emulator))?;
+    // Vita3K starts games by Title ID, which is read from the .vpk.
+    let template: Vec<String> = if template.iter().any(|a| a.contains("{titleid}")) {
+        let tid = crate::vita::title_id(Path::new(&path))?;
+        template.iter().map(|a| a.replace("{titleid}", &tid)).collect()
+    } else {
+        template
+    };
     let dir = installer::emu_dir(&app, &installer::slug(&sys.emulator))?;
     let info = installer::read_installed(&dir)
         .ok_or_else(|| format!("{} isn't installed yet. Install it in the Emulators tab first.", sys.emulator))?;

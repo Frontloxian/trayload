@@ -9,6 +9,7 @@ mod library;
 mod music;
 mod news;
 mod setup;
+mod vita;
 mod registry;
 mod secrets;
 

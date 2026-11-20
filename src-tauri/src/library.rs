@@ -271,6 +271,9 @@ fn disc_system(head: &[u8]) -> Option<&'static str> {
     if head.len() > 0x104 && &head[0x100..0x104] == b"SEGA" {
         return Some("genesis");
     }
+    if has(b"PC-FX:Hu_CD-ROM") {
+        return Some("pcfx");
+    }
     if has(b"PLAYSTATION") {
         return Some("ps1");
     }

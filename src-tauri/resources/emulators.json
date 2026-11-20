@@ -664,7 +664,7 @@
    "exePattern": "^Vita3K\\.exe$",
    "setup": {
     "folder": ".",
-    "intro": "Vita3K needs the PS Vita firmware and font package from your own console, installed from Vita3K under File.",
+    "intro": "Vita3K needs the PS Vita firmware and font package from your own console, installed from Vita3K under File. Install each game once in Vita3K (File, Install .vpk). After that, Play starts it by its Title ID.",
     "items": [
      {
       "label": "PS Vita firmware (installed)",
@@ -674,7 +674,15 @@
       "note": "Found after the firmware is installed. This check is a best guess, so it never blocks anything."
      }
     ]
-   }
+   },
+   "launchArgs": [
+    "-r",
+    "{titleid}"
+   ],
+   "backup": [
+    "ux0/user",
+    "config.yml"
+   ]
   },
   {
    "id": "dc",
@@ -775,7 +783,10 @@
       "deep": true
      }
     ]
-   }
+   },
+   "backup": [
+    "xemu.toml"
+   ]
   },
   {
    "id": "x360",
@@ -1735,6 +1746,53 @@
    ]
   },
   {
+   "id": "pcfx",
+   "name": "PC-FX",
+   "emulator": "Beetle PC-FX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "mednafen_pcfx"
+   },
+   "exts": [
+    "cue",
+    "chd",
+    "ccd",
+    "toc"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\mednafen_pcfx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "NEC_-_PC-FX"
+   ],
+   "aliases": [
+    "pcfx"
+   ],
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "PC-FX games need the PC-FX BIOS from your own console.",
+    "items": [
+     {
+      "label": "PC-FX BIOS (pcfx.rom)",
+      "required": true,
+      "namePattern": "^pcfx\\.rom$",
+      "deep": true,
+      "note": "Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
    "id": "arcade",
    "name": "Arcade",
    "emulator": "MAME",
@@ -1764,5 +1822,5 @@
    }
   }
  ],
- "pending": "Still to add: MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling), and PC-FX. PS5 is watch-only: follow it in the News tab, no install entry."
+ "pending": "Still to add: MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling). PS5 is watch-only: follow it in the News tab, no install entry."
 }

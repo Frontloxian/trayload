@@ -177,7 +177,8 @@ mod tests {
                 _ => {}
             }
             if let Some(a) = &s.launch_args {
-                assert_eq!(a.iter().filter(|x| *x == "{rom}").count(), 1, "launchArgs of {} needs one {{rom}}", s.id);
+                let n = a.iter().filter(|x| *x == "{rom}" || x.contains("{titleid}")).count();
+                assert_eq!(n, 1, "launchArgs of {} needs exactly one {{rom}} or {{titleid}}", s.id);
             }
             for b in &s.backup {
                 let t = std::path::Path::new(b);
