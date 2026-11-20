@@ -106,6 +106,9 @@ pub struct System {
     /// Other names for the system, used to recognise folder names like "Mega Drive".
     #[serde(default)]
     pub aliases: Vec<String>,
+    /// Folders and files (relative to the emulator's folder) holding saves, states and settings.
+    #[serde(default)]
+    pub backup: Vec<String>,
     /// Shown on the emulator's card and in the install confirmation.
     #[serde(default)]
     pub warning: Option<String>,
@@ -175,6 +178,10 @@ mod tests {
             }
             if let Some(a) = &s.launch_args {
                 assert_eq!(a.iter().filter(|x| *x == "{rom}").count(), 1, "launchArgs of {} needs one {{rom}}", s.id);
+            }
+            for b in &s.backup {
+                let t = std::path::Path::new(b);
+                assert!(!b.is_empty() && t.components().all(|c| matches!(c, Component::Normal(_))), "bad backup path for {}", s.id);
             }
             if let Some(m) = &s.portable_marker {
                 let t = m.trim_end_matches('/');

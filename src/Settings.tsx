@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import BackupPanel from "./BackupPanel";
 import type { AppInfo, ArtSettings, RemovedGame } from "./types";
 import type { Music } from "./useMusic";
 
@@ -250,6 +251,8 @@ export default function Settings({ music }: { music: Music }) {
           ))
         )}
       </section>
+
+      <BackupPanel />
 
       <section className="section">
         <h2>About and troubleshooting</h2>

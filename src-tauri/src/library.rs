@@ -137,7 +137,15 @@ fn migrate(conn: &Connection) -> Result<(), String> {
 pub fn open(app: &AppHandle) -> Result<Db, String> {
     let dir = app.path().app_local_data_dir().map_err(e)?;
     fs::create_dir_all(&dir).map_err(e)?;
-    let conn = Connection::open(dir.join("library.db")).map_err(e)?;
+    // A restore from a USB backup is applied here, before the database is opened.
+    let (db_path, restore) = (dir.join("library.db"), dir.join("library.restore.db"));
+    if restore.is_file() {
+        if db_path.exists() {
+            let _ = fs::rename(&db_path, dir.join("library.before-restore.db"));
+        }
+        let _ = fs::rename(&restore, &db_path);
+    }
+    let conn = Connection::open(db_path).map_err(e)?;
     conn.execute_batch(SCHEMA).map_err(e)?;
     migrate(&conn)?;
     Ok(Db(Arc::new(Mutex::new(conn))))

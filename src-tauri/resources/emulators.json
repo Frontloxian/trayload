@@ -37,7 +37,12 @@
       "note": "Optional. Only for Famicom Disk System games. Put it in the Firmware folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "Saves",
+    "SaveStates",
+    "settings.json"
+   ]
   },
   {
    "id": "snes",
@@ -72,7 +77,12 @@
       "note": "Optional. Only a few games with special chips ask for these."
      }
     ]
-   }
+   },
+   "backup": [
+    "Saves",
+    "SaveStates",
+    "settings.json"
+   ]
   },
   {
    "id": "gb",
@@ -100,7 +110,12 @@
     "folder": ".",
     "intro": "Game Boy and Game Boy Color games run without a BIOS. A real boot ROM is optional.",
     "items": []
-   }
+   },
+   "backup": [
+    "portable.ini",
+    "saves",
+    "states"
+   ]
   },
   {
    "id": "gba",
@@ -137,7 +152,12 @@
       "note": "Optional. Pick it in mGBA under Tools, Settings, BIOS."
      }
     ]
-   }
+   },
+   "backup": [
+    "portable.ini",
+    "saves",
+    "states"
+   ]
   },
   {
    "id": "n64",
@@ -164,7 +184,11 @@
     "folder": ".",
     "intro": "Nintendo 64 games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "Save",
+    "Config"
+   ]
   },
   {
    "id": "nds",
@@ -221,7 +245,10 @@
       "note": "Set the paths in melonDS under Config, Emu settings, DS-mode."
      }
     ]
-   }
+   },
+   "backup": [
+    "melonDS.toml"
+   ]
   },
   {
    "id": "3ds",
@@ -257,7 +284,12 @@
       "note": "Optional. Only for games that are still encrypted. Put it in the sysdata folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "user/sdmc",
+    "user/states",
+    "user/config"
+   ]
   },
   {
    "id": "gc",
@@ -297,7 +329,13 @@
       "note": "Optional. Only needed to see the GameCube boot logo. Put it in a USA, EUR or JAP folder inside this one."
      }
     ]
-   }
+   },
+   "backup": [
+    "User/GC",
+    "User/Wii",
+    "User/StateSaves",
+    "User/Config"
+   ]
   },
   {
    "id": "wii",
@@ -329,7 +367,13 @@
     "folder": "User",
     "intro": "Wii games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "User/GC",
+    "User/Wii",
+    "User/StateSaves",
+    "User/Config"
+   ]
   },
   {
    "id": "wiiu",
@@ -367,7 +411,11 @@
       "note": "Optional if your games are decrypted. Use keys from your own console. Put it next to Cemu.exe."
      }
     ]
-   }
+   },
+   "backup": [
+    "mlc01/usr/save",
+    "settings.xml"
+   ]
   },
   {
    "id": "switch",
@@ -409,7 +457,11 @@
       "note": "Needed by many games. Install it from inside Eden (Tools, then Install Firmware)."
      }
     ]
-   }
+   },
+   "backup": [
+    "user/nand/user/save",
+    "user/config"
+   ]
   },
   {
    "id": "switch2",
@@ -468,7 +520,12 @@
       "note": "A 512 KB .bin file (for example scph5501.bin). Pick one that matches your games' region."
      }
     ]
-   }
+   },
+   "backup": [
+    "memcards",
+    "savestates",
+    "settings.ini"
+   ]
   },
   {
    "id": "ps2",
@@ -507,7 +564,12 @@
     "--",
     "{rom}"
    ],
-   "portableMarker": "portable.txt"
+   "portableMarker": "portable.txt",
+   "backup": [
+    "memcards",
+    "sstates",
+    "inis"
+   ]
   },
   {
    "id": "ps3",
@@ -543,7 +605,12 @@
       "note": "Found after the firmware is installed. This check is a best guess."
      }
     ]
-   }
+   },
+   "backup": [
+    "dev_hdd0/home",
+    "savestates",
+    "config"
+   ]
   },
   {
    "id": "psp",
@@ -572,7 +639,12 @@
     "folder": ".",
     "intro": "PSP games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "memstick/PSP/SAVEDATA",
+    "memstick/PSP/PPSSPP_STATE",
+    "memstick/PSP/SYSTEM"
+   ]
   },
   {
    "id": "vita",
@@ -647,7 +719,10 @@
    "launchArgs": [
     "{rom}"
    ],
-   "portableMarker": "data/"
+   "portableMarker": "data/",
+   "backup": [
+    "data"
+   ]
   },
   {
    "id": "xbox",
@@ -727,7 +802,11 @@
     "folder": ".",
     "intro": "Xenia Canary runs without BIOS or firmware files.",
     "items": []
-   }
+   },
+   "backup": [
+    "content",
+    "xenia-canary.config.toml"
+   ]
   },
   {
    "id": "sms",
@@ -759,7 +838,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "gg",
@@ -790,7 +874,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "sg1000",
@@ -818,7 +907,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "genesis",
@@ -854,7 +948,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "segacd",
@@ -896,7 +995,12 @@
       "note": "Put it in the system folder. Pick the region that matches your games."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "s32x",
@@ -927,7 +1031,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "saturn",
@@ -969,7 +1078,12 @@
       "note": "Kronos looks for this exact name. Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "pce",
@@ -1015,7 +1129,12 @@
       "note": "Optional. Only for PC Engine CD games. Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "a2600",
@@ -1048,7 +1167,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "a5200",
@@ -1088,7 +1212,12 @@
       "note": "Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "a7800",
@@ -1128,7 +1257,12 @@
       "note": "Recommended. Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "lynx",
@@ -1169,7 +1303,12 @@
       "note": "Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "jaguar",
@@ -1202,7 +1341,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "ngp",
@@ -1238,7 +1382,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "wswan",
@@ -1272,7 +1421,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "vb",
@@ -1304,7 +1458,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "pokemini",
@@ -1343,7 +1502,12 @@
       "note": "Optional. Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "coleco",
@@ -1383,7 +1547,12 @@
       "note": "Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "intv",
@@ -1427,7 +1596,12 @@
       "deep": true
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "vectrex",
@@ -1458,7 +1632,12 @@
     "folder": "system",
     "intro": "These games run without extra files.",
     "items": []
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "msx",
@@ -1501,7 +1680,12 @@
       "note": "This check is a best guess and never blocks anything."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "3do",
@@ -1543,7 +1727,12 @@
       "note": "Put it in the system folder."
      }
     ]
-   }
+   },
+   "backup": [
+    "saves",
+    "states",
+    "retroarch.cfg"
+   ]
   },
   {
    "id": "arcade",

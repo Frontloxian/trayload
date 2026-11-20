@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { Registry, UpdateInfo } from "./types";
+import type { Registry, ScanSummary, UpdateInfo } from "./types";
 import Emulators from "./Emulators";
 import ErrorBoundary from "./ErrorBoundary";
 import Home from "./Home";
@@ -11,7 +11,10 @@ import MiniPlayer from "./MiniPlayer";
 import News from "./News";
 import Settings from "./Settings";
 import Setup from "./Setup";
+import { QuickSettings, ShortcutHelp, Welcome } from "./Overlays";
+import { useGamepad, useShortcuts } from "./useInput";
 import { useMusic } from "./useMusic";
+import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
@@ -33,6 +36,56 @@ export default function App() {
   const [libKey, setLibKey] = useState(0);
   const music = useMusic();
   const [updates, setUpdates] = useState<UpdateInfo[]>([]);
+  const [welcome, setWelcome] = useState(() => {
+    try {
+      return localStorage.getItem("trayload.welcomed") !== "1";
+    } catch {
+      return false;
+    }
+  });
+  const [help, setHelp] = useState(false);
+  const [quick, setQuick] = useState(false);
+  const [scan, setScan] = useState<ScanSummary | null>(null);
+
+  const closeWelcome = () => {
+    setWelcome(false);
+    try {
+      localStorage.setItem("trayload.welcomed", "1");
+    } catch {
+      /* shown again next time */
+    }
+  };
+
+  useEffect(() => {
+    const load = () => invoke<ScanSummary | null>("last_scan").then(setScan).catch(() => {});
+    load();
+    const p = listen("library-changed", load);
+    return () => void p.then((f) => f());
+  }, []);
+
+  const goPage = (p: Page) => {
+    setPage(p);
+    if (detailId !== null) setLibKey((k) => k + 1);
+    setDetailId(null);
+  };
+  const rescan = () => {
+    invoke("rescan").catch((e) => setError(String(e)));
+    setLibKey((k) => k + 1);
+  };
+  const back = () => {
+    if (detailId !== null) {
+      setDetailId(null);
+      setLibKey((k) => k + 1);
+    } else if (page !== "home") setPage("home");
+  };
+  const ids: Page[] = ["home", "library", "emulators", "setup", "news"];
+
+  useShortcuts({ go: goPage, rescan, back, help: () => setHelp(true), toggleMusic: music.toggle });
+  // Controller navigation is off while a game is running, so the launcher never reacts to game input.
+  useGamepad(!music.pausedByGame, {
+    back,
+    tab: (d) => goPage(ids[(Math.max(0, ids.indexOf(page)) + d + ids.length) % ids.length]),
+  });
 
   const checkUpdates = () => {
     invoke<UpdateInfo[]>("check_updates").then(setUpdates).catch(() => setUpdates([]));
@@ -119,6 +172,14 @@ export default function App() {
         ))}
         <div className="spacer" />
         <MiniPlayer music={music} />
+        {scan && (
+          <div className="muted small scan-note">
+            Library scanned at launch. {scan.added} new, {scan.missing} missing.
+          </div>
+        )}
+        <button className="nav" onClick={() => setQuick(true)}>
+          Quick settings
+        </button>
         <button className="nav" aria-current={page === "settings" ? "page" : undefined} onClick={() => setPage("settings")}>
           Settings
         </button>
@@ -141,6 +202,7 @@ export default function App() {
               setDetailId(id);
             }}
             onGo={setPage}
+            onUpdated={checkUpdates}
           />
         ) : page === "emulators" ? (
           <Emulators updates={updates} onChanged={checkUpdates} />
@@ -169,6 +231,19 @@ export default function App() {
         ) : null}
         </ErrorBoundary>
       </main>
+
+      {welcome && (
+        <Welcome
+          onClose={closeWelcome}
+          onGo={(p) => {
+            setPage(p);
+          }}
+        />
+      )}
+      {help && <ShortcutHelp onClose={() => setHelp(false)} />}
+      {quick && (
+        <QuickSettings music={music} onClose={() => setQuick(false)} onGo={setPage} onRescan={rescan} onHelp={() => setHelp(true)} />
+      )}
 
       {dragging && (
         <div className="dropzone" aria-hidden="true">

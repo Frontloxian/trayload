@@ -92,7 +92,7 @@ fn data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path().app_local_data_dir().map_err(|e| e.to_string())
 }
 
-fn emulators_dir(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn emulators_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(data_dir(app)?.join("emulators"))
 }
 

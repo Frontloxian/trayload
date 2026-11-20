@@ -1,6 +1,7 @@
 #[macro_use]
 mod applog;
 mod art;
+mod backup;
 mod collections;
 mod installer;
 mod launcher;
@@ -82,6 +83,10 @@ pub fn run() {
             music::open_music_folder,
             music::add_music_pack,
             music::remove_music_pack,
+            backup::backup_preview,
+            backup::backup_run,
+            backup::backup_info,
+            backup::restore_run,
             applog::get_app_info,
             applog::open_logs_folder,
             applog::log_frontend_error,
