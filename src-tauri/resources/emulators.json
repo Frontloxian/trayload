@@ -464,25 +464,6 @@
    ]
   },
   {
-   "id": "switch2",
-   "name": "Nintendo Switch 2",
-   "emulator": "Lichii",
-   "tier": "experimental",
-   "source": {
-    "type": "github",
-    "repo": "zortos293/Lichii",
-    "assetPattern": "^lichii-windows-x86_64\\.zip$"
-   },
-   "exts": [],
-   "exePattern": "^lichii.*\\.exe$",
-   "warning": "Experimental. Switch 2 emulation is very early: expect crashes, missing games and changes without notice. It needs keys and firmware from your own console. Trayload downloads it only from github.com/zortos293/Lichii, and games can't be started from Trayload yet.",
-   "setup": {
-    "folder": ".",
-    "intro": "Switch 2 emulation is experimental and the exact files it needs aren't settled yet. Expect it to need keys and firmware from your own console.",
-    "items": []
-   }
-  },
-  {
    "id": "ps1",
    "name": "PlayStation",
    "emulator": "DuckStation",
@@ -1822,5 +1803,5 @@
    }
   }
  ],
- "pending": "Still to add: MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling). PS5 is watch-only: follow it in the News tab, no install entry."
+ "pending": "Still to add: Switch 2 via Lichii (on hold until games can be started from Trayload), then MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling). PS5 is watch-only: follow it in the News tab, no install entry."
 }
