@@ -170,7 +170,9 @@ impl Detector {
                     list.push(s.id.clone());
                 }
             }
-            keys.insert(s.id.clone(), vec![norm(&s.id), norm(&s.name)]);
+            let mut k = vec![norm(&s.id), norm(&s.name)];
+            k.extend(s.aliases.iter().map(|a| norm(a)));
+            keys.insert(s.id.clone(), k);
         }
         Detector { by_ext, keys }
     }
@@ -224,9 +226,61 @@ impl Detector {
     }
 }
 
+/// The first 40 KB of a disc's first data track (for a .cue, the first FILE it names).
+fn disc_head(path: &Path, ext: &str) -> Option<Vec<u8>> {
+    let target = if ext == "cue" {
+        let text = String::from_utf8_lossy(&fs::read(path).ok()?).to_string();
+        let re = Regex::new(r#"(?i)^\s*FILE\s+"([^"]+)""#).ok()?;
+        let name = text.lines().find_map(|l| re.captures(l).map(|c| c[1].to_string()))?;
+        path.parent()?.join(name)
+    } else {
+        path.to_path_buf()
+    };
+    let mut buf = vec![0u8; 0xA000];
+    let n = fs::File::open(target).ok()?.read(&mut buf).ok()?;
+    buf.truncate(n);
+    Some(buf)
+}
+
+/// Which console a disc is for, from text written in its first sectors.
+/// (Markers are from the consoles' disc formats; if a console is mis-detected you can still pick it by hand.)
+fn disc_system(head: &[u8]) -> Option<&'static str> {
+    let has = |needle: &[u8]| head.windows(needle.len()).any(|w| w == needle);
+    if has(b"SEGA SEGASATURN") {
+        return Some("saturn");
+    }
+    if has(b"SEGADISCSYSTEM") {
+        return Some("segacd");
+    }
+    if has(b"PC Engine CD-ROM SYSTEM") {
+        return Some("pce");
+    }
+    let zz = [0x01, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x01];
+    if head.len() > 23 && (head[..7] == zz || head[16..23] == zz) {
+        return Some("3do");
+    }
+    // Mega Drive / Genesis cartridge dumps say "SEGA" at 0x100.
+    if head.len() > 0x104 && &head[0x100..0x104] == b"SEGA" {
+        return Some("genesis");
+    }
+    if has(b"PLAYSTATION") {
+        return Some("ps1");
+    }
+    None
+}
+
 /// Header check for discs. GameCube magic 0xC2339F3D at 0x1C, Wii magic 0x5D1C9EA3 at 0x18.
 /// (Verify against Dolphin's docs if detection ever misbehaves.)
 fn sniff(path: &Path, ext: &str, cands: &[String]) -> Option<String> {
+    if matches!(ext, "cue" | "iso" | "bin") {
+        if let Some(head) = disc_head(path, ext) {
+            if let Some(id) = disc_system(&head) {
+                if cands.iter().any(|c| c == id) {
+                    return Some(id.to_string());
+                }
+            }
+        }
+    }
     if ext != "iso" && ext != "gcm" {
         return None;
     }
@@ -650,6 +704,23 @@ mod tests {
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[test]
+    fn disc_markers() {
+        let mut v = vec![0u8; 64];
+        v[16..31].copy_from_slice(b"SEGA SEGASATURN");
+        assert_eq!(disc_system(&v), Some("saturn"));
+        let mut s = vec![0u8; 64];
+        s[..14].copy_from_slice(b"SEGADISCSYSTEM");
+        assert_eq!(disc_system(&s), Some("segacd"));
+        let mut t = vec![0u8; 64];
+        t[16..23].copy_from_slice(&[1, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 1]);
+        assert_eq!(disc_system(&t), Some("3do"));
+        let mut g = vec![0u8; 0x200];
+        g[0x100..0x110].copy_from_slice(b"SEGA MEGA DRIVE ");
+        assert_eq!(disc_system(&g), Some("genesis"));
+        assert_eq!(disc_system(&[0u8; 64]), None);
     }
 
     #[test]

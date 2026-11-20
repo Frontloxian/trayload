@@ -30,6 +30,11 @@ pub enum Source {
         #[serde(rename = "versionRegex", default)]
         version_regex: Option<String>,
     },
+    /// A fixed official download address. The version is read from the server's Last-Modified date.
+    Direct { url: String },
+    /// A libretro core (one .dll) from the official libretro build server. Runs inside the shared
+    /// RetroArch install, which is downloaded automatically the first time.
+    Core { core: String },
     /// Vendor download page (resolved later by the installer).
     Page {
         url: String,
@@ -98,6 +103,9 @@ pub struct System {
     /// "experimental" entries are hidden behind an opt-in and need a confirmation to install.
     #[serde(default)]
     pub tier: Option<String>,
+    /// Other names for the system, used to recognise folder names like "Mega Drive".
+    #[serde(default)]
+    pub aliases: Vec<String>,
     /// Shown on the emulator's card and in the install confirmation.
     #[serde(default)]
     pub warning: Option<String>,
@@ -159,6 +167,9 @@ mod tests {
                 }
                 Source::Forgejo { asset_pattern, .. } => {
                     assert!(Regex::new(asset_pattern).is_ok(), "bad assetPattern for {}", s.id);
+                }
+                Source::Core { core } => {
+                    assert!(Regex::new("^[a-z0-9_]+$").unwrap().is_match(core), "bad core name for {}", s.id);
                 }
                 _ => {}
             }

@@ -730,6 +730,822 @@
    }
   },
   {
+   "id": "sms",
+   "name": "Master System",
+   "emulator": "Genesis Plus GX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "genesis_plus_gx"
+   },
+   "exts": [
+    "sms"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\genesis_plus_gx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_Master_System_-_Mark_III"
+   ],
+   "aliases": [
+    "mastersystem",
+    "sega master"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "gg",
+   "name": "Game Gear",
+   "emulator": "Genesis Plus GX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "genesis_plus_gx"
+   },
+   "exts": [
+    "gg"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\genesis_plus_gx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_Game_Gear"
+   ],
+   "aliases": [
+    "gamegear"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "sg1000",
+   "name": "SG-1000",
+   "emulator": "Genesis Plus GX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "genesis_plus_gx"
+   },
+   "exts": [
+    "sg"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\genesis_plus_gx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_SG-1000"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "genesis",
+   "name": "Sega Genesis / Mega Drive",
+   "emulator": "Genesis Plus GX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "genesis_plus_gx"
+   },
+   "exts": [
+    "md",
+    "gen",
+    "smd",
+    "bin"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\genesis_plus_gx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_Mega_Drive_-_Genesis"
+   ],
+   "aliases": [
+    "megadrive",
+    "genesis",
+    "sega md"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "segacd",
+   "name": "Sega CD",
+   "emulator": "Genesis Plus GX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "genesis_plus_gx"
+   },
+   "exts": [
+    "cue",
+    "chd",
+    "iso"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\genesis_plus_gx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_Mega-CD_-_Sega_CD"
+   ],
+   "aliases": [
+    "megacd",
+    "sega cd"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Sega CD games need a Sega CD BIOS from your own console, matching the game's region.",
+    "items": [
+     {
+      "label": "Sega CD BIOS (bios_CD_U.bin, bios_CD_E.bin or bios_CD_J.bin)",
+      "required": true,
+      "namePattern": "^bios_CD_[UEJ]\\.bin$",
+      "deep": true,
+      "note": "Put it in the system folder. Pick the region that matches your games."
+     }
+    ]
+   }
+  },
+  {
+   "id": "s32x",
+   "name": "Sega 32X",
+   "emulator": "PicoDrive",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "picodrive"
+   },
+   "exts": [
+    "32x"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\picodrive_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_32X"
+   ],
+   "aliases": [
+    "32x"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "saturn",
+   "name": "Sega Saturn",
+   "emulator": "Kronos",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "kronos"
+   },
+   "exts": [
+    "cue",
+    "chd",
+    "ccd",
+    "mds"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\kronos_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Sega_-_Saturn"
+   ],
+   "aliases": [
+    "saturn"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Saturn games need a Saturn BIOS from your own console.",
+    "items": [
+     {
+      "label": "Saturn BIOS (saturn_bios.bin)",
+      "required": true,
+      "namePattern": "^saturn_bios\\.bin$",
+      "deep": true,
+      "note": "Kronos looks for this exact name. Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "pce",
+   "name": "PC Engine / TurboGrafx-16",
+   "emulator": "Beetle PCE",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "mednafen_pce"
+   },
+   "exts": [
+    "pce",
+    "sgx",
+    "cue",
+    "chd",
+    "ccd"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\mednafen_pce_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "NEC_-_PC_Engine_-_TurboGrafx_16",
+    "NEC_-_PC_Engine_CD_-_TurboGrafx-CD"
+   ],
+   "aliases": [
+    "pcengine",
+    "turbografx",
+    "tg16"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Cartridge games run without extra files. CD games need the System Card.",
+    "items": [
+     {
+      "label": "System Card (syscard3.pce)",
+      "required": false,
+      "namePattern": "^syscard3\\.pce$",
+      "deep": true,
+      "note": "Optional. Only for PC Engine CD games. Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "a2600",
+   "name": "Atari 2600",
+   "emulator": "Stella",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "stella"
+   },
+   "exts": [
+    "a26",
+    "bin"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\stella_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Atari_-_2600"
+   ],
+   "aliases": [
+    "atari2600",
+    "2600"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "a5200",
+   "name": "Atari 5200",
+   "emulator": "a5200",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "a5200"
+   },
+   "exts": [
+    "a52"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\a5200_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Atari_-_5200"
+   ],
+   "aliases": [
+    "atari5200",
+    "5200"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Atari 5200 games need the 5200 BIOS from your own console.",
+    "items": [
+     {
+      "label": "Atari 5200 BIOS (5200.rom)",
+      "required": true,
+      "namePattern": "^5200\\.rom$",
+      "deep": true,
+      "note": "Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "a7800",
+   "name": "Atari 7800",
+   "emulator": "ProSystem",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "prosystem"
+   },
+   "exts": [
+    "a78"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\prosystem_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Atari_-_7800"
+   ],
+   "aliases": [
+    "atari7800",
+    "7800"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Atari 7800 games run best with the 7800 BIOS from your own console.",
+    "items": [
+     {
+      "label": "Atari 7800 BIOS",
+      "required": false,
+      "namePattern": "^7800 BIOS.*\\.rom$",
+      "deep": true,
+      "note": "Recommended. Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "lynx",
+   "name": "Atari Lynx",
+   "emulator": "Handy",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "handy"
+   },
+   "exts": [
+    "lnx",
+    "lyx"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\handy_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Atari_-_Lynx"
+   ],
+   "aliases": [
+    "atarilynx",
+    "lynx"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Lynx games need the Lynx boot ROM from your own console.",
+    "items": [
+     {
+      "label": "Lynx boot ROM (lynxboot.img)",
+      "required": true,
+      "namePattern": "^lynxboot\\.img$",
+      "deep": true,
+      "note": "Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "jaguar",
+   "name": "Atari Jaguar",
+   "emulator": "Virtual Jaguar",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "virtualjaguar"
+   },
+   "exts": [
+    "j64",
+    "jag"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\virtualjaguar_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Atari_-_Jaguar"
+   ],
+   "aliases": [
+    "atarijaguar",
+    "jaguar"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "ngp",
+   "name": "Neo Geo Pocket",
+   "emulator": "Beetle NeoPop",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "mednafen_ngp"
+   },
+   "exts": [
+    "ngp",
+    "ngc",
+    "ngpc",
+    "npc"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\mednafen_ngp_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "SNK_-_Neo_Geo_Pocket",
+    "SNK_-_Neo_Geo_Pocket_Color"
+   ],
+   "aliases": [
+    "neogeopocket",
+    "ngpc"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "wswan",
+   "name": "WonderSwan",
+   "emulator": "Beetle WonderSwan",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "mednafen_wswan"
+   },
+   "exts": [
+    "ws",
+    "wsc",
+    "pc2"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\mednafen_wswan_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Bandai_-_WonderSwan",
+    "Bandai_-_WonderSwan_Color"
+   ],
+   "aliases": [
+    "wonderswan"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "vb",
+   "name": "Virtual Boy",
+   "emulator": "Beetle VB",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "mednafen_vb"
+   },
+   "exts": [
+    "vb",
+    "vboy"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\mednafen_vb_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Nintendo_-_Virtual_Boy"
+   ],
+   "aliases": [
+    "virtualboy"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "pokemini",
+   "name": "Pokemon Mini",
+   "emulator": "PokeMini",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "pokemini"
+   },
+   "exts": [
+    "min"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\pokemini_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Nintendo_-_Pokemon_Mini"
+   ],
+   "aliases": [
+    "pokemonmini"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "PokeMini has a built-in replacement BIOS, so games run without one. A real BIOS is optional.",
+    "items": [
+     {
+      "label": "Pokemon Mini BIOS (bios.min)",
+      "required": false,
+      "namePattern": "^bios\\.min$",
+      "deep": true,
+      "note": "Optional. Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "coleco",
+   "name": "ColecoVision",
+   "emulator": "Gearcoleco",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "gearcoleco"
+   },
+   "exts": [
+    "col",
+    "cv"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\gearcoleco_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Coleco_-_ColecoVision"
+   ],
+   "aliases": [
+    "colecovision"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "ColecoVision games need the ColecoVision BIOS from your own console.",
+    "items": [
+     {
+      "label": "ColecoVision BIOS (colecovision.rom)",
+      "required": true,
+      "namePattern": "^colecovision\\.rom$",
+      "deep": true,
+      "note": "Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
+   "id": "intv",
+   "name": "Intellivision",
+   "emulator": "FreeIntv",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "freeintv"
+   },
+   "exts": [
+    "int"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\freeintv_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Mattel_-_Intellivision"
+   ],
+   "aliases": [
+    "intellivision"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "Intellivision games need two BIOS files from your own console.",
+    "items": [
+     {
+      "label": "Executive ROM (exec.bin)",
+      "required": true,
+      "namePattern": "^exec\\.bin$",
+      "deep": true
+     },
+     {
+      "label": "Graphics ROM (grom.bin)",
+      "required": true,
+      "namePattern": "^grom\\.bin$",
+      "deep": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "vectrex",
+   "name": "Vectrex",
+   "emulator": "vecx",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "vecx"
+   },
+   "exts": [
+    "vec"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\vecx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "GCE_-_Vectrex"
+   ],
+   "aliases": [
+    "vectrex"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "These games run without extra files.",
+    "items": []
+   }
+  },
+  {
+   "id": "msx",
+   "name": "MSX",
+   "emulator": "blueMSX",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "bluemsx"
+   },
+   "exts": [
+    "mx1",
+    "mx2",
+    "dsk",
+    "cas"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\bluemsx_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "Microsoft_-_MSX",
+    "Microsoft_-_MSX2"
+   ],
+   "aliases": [
+    "msx2"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "blueMSX needs its Machines and Databases folders from the full blueMSX package, placed in the system folder. Use files you already have.",
+    "items": [
+     {
+      "label": "MSX machine files (Machines folder)",
+      "required": false,
+      "namePattern": "\\.(rom|cfg)$",
+      "deep": true,
+      "note": "This check is a best guess and never blocks anything."
+     }
+    ]
+   }
+  },
+  {
+   "id": "3do",
+   "name": "3DO",
+   "emulator": "Opera",
+   "tier": "core",
+   "source": {
+    "type": "core",
+    "core": "opera"
+   },
+   "exts": [
+    "cue",
+    "chd",
+    "iso"
+   ],
+   "exePattern": "^retroarch\\.exe$",
+   "launchArgs": [
+    "-L",
+    "cores\\opera_libretro.dll",
+    "-f",
+    "{rom}"
+   ],
+   "artRepos": [
+    "The_3DO_Company_-_3DO"
+   ],
+   "aliases": [
+    "3do",
+    "panasonic3do"
+   ],
+   "setup": {
+    "folder": "system",
+    "intro": "3DO games need a 3DO BIOS from your own console.",
+    "items": [
+     {
+      "label": "3DO BIOS (for example panafz10.bin)",
+      "required": true,
+      "namePattern": "^(panafz1.*|goldstar|sanyotry)\\.bin$",
+      "deep": true,
+      "note": "Put it in the system folder."
+     }
+    ]
+   }
+  },
+  {
    "id": "arcade",
    "name": "Arcade",
    "emulator": "MAME",
@@ -759,5 +1575,5 @@
    }
   }
  ],
- "pending": "Still to add: MAME, and the Sega/Atari/NEC/etc. systems via RetroArch. PS5 is watch-only: follow it in the News tab, no install entry."
+ "pending": "Still to add: MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling), and PC-FX. PS5 is watch-only: follow it in the News tab, no install entry."
 }

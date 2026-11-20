@@ -1,6 +1,9 @@
 export type Source =
   | { type: "github"; repo: string; assetPattern: string }
-  | { type: "page"; url: string; assetPattern?: string | null };
+  | { type: "page"; url: string; assetPattern?: string | null }
+  | { type: "forgejo"; host: string; repo: string; assetPattern: string }
+  | { type: "direct"; url: string }
+  | { type: "core"; core: string };
 
 export interface System {
   id: string;
