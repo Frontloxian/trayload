@@ -5,7 +5,7 @@ Each release's notes are shown inside Trayload (after updating, and under Settin
 ## 1.1.0
 
 ### New
-- **Built-in soundtrack:** five original tracks, in lofi, chiptune, ambient and bossa nova styles. Mute, pause and volume stay in the mini player.
+- **Built-in soundtrack:** five original tracks. Mute, pause and volume stay in the mini player.
 - **Update notice:** Trayload now tells you when a new version is out, with the release notes and one-click install. You can turn the startup check off in Settings.
 - **What's new:** release notes appear once after an update, and any time from Settings.
 - **New logo and app icon** in the taskbar, window, installer and sidebar.
