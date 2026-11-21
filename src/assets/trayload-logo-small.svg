@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Trayload logo, simplified for small sizes">
+  <!-- Simplified for 16-48px: no slot, light or highlight, thicker shapes, stronger contrast -->
+  <rect x="56" y="56" width="400" height="344" rx="40" fill="#2150A3"/>
+  <circle cx="256" cy="376" r="132" fill="#0A55E1" stroke="#0B1F4D" stroke-width="16"/>
+  <circle cx="256" cy="376" r="42" fill="#A9B3C4"/>
+</svg>

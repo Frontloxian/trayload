@@ -15,6 +15,7 @@ import { QuickSettings, ShortcutHelp, Welcome } from "./Overlays";
 import { useGamepad, useShortcuts } from "./useInput";
 import { useMusic } from "./useMusic";
 import { listen } from "@tauri-apps/api/event";
+import logo from "./assets/trayload-logo-small.svg";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
@@ -155,7 +156,9 @@ export default function App() {
   return (
     <div className="shell">
       <nav className="sidebar" aria-label="Main">
-        <div className="brand">Trayload</div>
+        <div className="brand">
+          <img src={logo} alt="" width={28} height={28} /> Trayload
+        </div>
         {NAV.map((n) => (
           <button key={n.id} className="nav" aria-current={page === n.id ? "page" : undefined} onClick={() => {
               setPage(n.id);

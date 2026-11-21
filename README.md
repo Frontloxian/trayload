@@ -1,3 +1,5 @@
+<p align="center"><img src="src/assets/trayload-logo.svg" alt="Trayload logo" width="128"></p>
+
 # Trayload
 
 A Windows launcher for emulators. Install standalone emulators from their official sources in one click, drag in your own games, and play from one library with covers, play time, news and optional built-in music.
