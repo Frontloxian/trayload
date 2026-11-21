@@ -41,6 +41,15 @@ conf.bundle.category = "Game";
 conf.bundle.shortDescription = "Emulator launcher for Windows";
 conf.bundle.licenseFile = "../LICENSE";
 conf.bundle.createUpdaterArtifacts = true;
+// The built-in soundtrack ships inside the installer.
+const musicGlob = "resources/music/trayload/*";
+if (Array.isArray(conf.bundle.resources)) {
+  if (!conf.bundle.resources.includes(musicGlob)) conf.bundle.resources.push(musicGlob);
+} else if (conf.bundle.resources && typeof conf.bundle.resources === "object") {
+  conf.bundle.resources[musicGlob] = "resources/music/trayload/";
+} else {
+  conf.bundle.resources = [musicGlob];
+}
 conf.bundle.windows = conf.bundle.windows ?? {};
 conf.bundle.windows.nsis = {
   ...(conf.bundle.windows.nsis ?? {}),

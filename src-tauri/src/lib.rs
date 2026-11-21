@@ -32,6 +32,7 @@ pub fn run() {
         .manage(launcher::Running::default())
         .setup(|app| {
             applog::init(app.handle());
+            music::seed_builtin(app.handle());
             let db = library::open(app.handle())?;
             secrets::migrate(&db, "steamgriddb", "steamgriddb_key");
             launcher::recover_sessions(&db)?;

@@ -55,7 +55,10 @@
         "installerIcon": "icons/icon.ico",
         "displayLanguageSelector": false
       }
-    }
+    },
+    "resources": [
+      "resources/music/trayload/*"
+    ]
   },
   "plugins": {
     "updater": {

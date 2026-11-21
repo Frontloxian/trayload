@@ -41,6 +41,52 @@ fn music_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(d)
 }
 
+/// Copies every plain-named file from `src` into `dest`, but only when the file is missing or its size differs.
+/// Anything else already in `dest` (a person's own files) is left alone. Returns how many files were copied.
+fn copy_missing(src: &Path, dest: &Path) -> std::io::Result<usize> {
+    fs::create_dir_all(dest)?;
+    let mut copied = 0;
+    for e in fs::read_dir(src)?.flatten() {
+        let from = e.path();
+        let Some(name) = e.file_name().to_str().map(String::from) else { continue };
+        if !from.is_file() || !plain_name(&name) {
+            continue;
+        }
+        let to = dest.join(&name);
+        let same = match (fs::metadata(&from), fs::metadata(&to)) {
+            (Ok(a), Ok(b)) => a.len() == b.len(),
+            _ => false,
+        };
+        if !same {
+            fs::copy(&from, &to)?;
+            copied += 1;
+        }
+    }
+    Ok(copied)
+}
+
+/// Puts the soundtrack that ships with the installer into the music folder, so it shows up as the built-in pack.
+/// Runs at every start. It only copies what is missing, so it costs nothing once the files are there.
+pub fn seed_builtin(app: &AppHandle) {
+    let Ok(root) = music_dir(app) else { return };
+    let mut candidates: Vec<PathBuf> = vec![];
+    if let Ok(res) = app.path().resource_dir() {
+        candidates.push(res.join("resources").join("music").join(BUILTIN));
+        candidates.push(res.join("music").join(BUILTIN));
+    }
+    // While developing, the files are still in the source folder.
+    candidates.push(Path::new(env!("CARGO_MANIFEST_DIR")).join("resources").join("music").join(BUILTIN));
+    let Some(src) = candidates.into_iter().find(|p| p.is_dir()) else {
+        crate::applog!("[music] the bundled soundtrack was not found");
+        return;
+    };
+    match copy_missing(&src, &root.join(BUILTIN)) {
+        Ok(n) if n > 0 => crate::applog!("[music] installed {n} soundtrack file(s)"),
+        Ok(_) => {}
+        Err(e) => crate::applog!("[music] could not install the soundtrack: {e}"),
+    }
+}
+
 /// Folder and file names must be plain names: no separators, no "..", nothing hidden.
 fn plain_name(n: &str) -> bool {
     !n.is_empty()
@@ -215,6 +261,25 @@ mod tests {
         assert!(is_audio(Path::new("a.flac")));
         assert!(!is_audio(Path::new("a.exe")));
         assert!(!is_audio(Path::new("a")));
+    }
+
+    #[test]
+    fn copies_only_what_is_missing() {
+        let base = std::env::temp_dir().join(format!("trayload-music-test-{}", std::process::id()));
+        let (src, dest) = (base.join("src"), base.join("dest"));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("01 - A.mp3"), b"aaaa").unwrap();
+        fs::write(src.join("pack.json"), b"{}").unwrap();
+        assert_eq!(copy_missing(&src, &dest).unwrap(), 2);
+        // A second run copies nothing, and a person's own file is kept.
+        fs::write(dest.join("mine.mp3"), b"keep").unwrap();
+        assert_eq!(copy_missing(&src, &dest).unwrap(), 0);
+        assert!(dest.join("mine.mp3").exists());
+        // A changed file (different size) is replaced.
+        fs::write(src.join("01 - A.mp3"), b"aaaaaa").unwrap();
+        assert_eq!(copy_missing(&src, &dest).unwrap(), 1);
+        let _ = fs::remove_dir_all(&base);
     }
 
     #[test]
