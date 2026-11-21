@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { check, type Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import BackupPanel from "./BackupPanel";
 import type { AppInfo, ArtSettings, RemovedGame } from "./types";
 import type { Music } from "./useMusic";
@@ -18,6 +20,13 @@ export default function Settings({ music }: { music: Music }) {
       return false;
     }
   });
+  const [appUpd, setAppUpd] = useState<{
+    state: "idle" | "checking" | "none" | "found" | "installing" | "error";
+    version?: string;
+    notes?: string;
+    msg?: string;
+  }>({ state: "idle" });
+  const foundUpdate = useRef<Update | null>(null);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +49,33 @@ export default function Settings({ music }: { music: Music }) {
       setError(String(e));
     }
     load();
+  }
+
+  async function checkApp() {
+    setAppUpd({ state: "checking" });
+    try {
+      const u = await check();
+      if (!u) {
+        setAppUpd({ state: "none" });
+        return;
+      }
+      foundUpdate.current = u;
+      setAppUpd({ state: "found", version: u.version, notes: u.body ?? "" });
+    } catch (e) {
+      setAppUpd({ state: "error", msg: String(e) });
+    }
+  }
+
+  async function installApp() {
+    const u = foundUpdate.current;
+    if (!u) return;
+    setAppUpd((s) => ({ ...s, state: "installing" }));
+    try {
+      await u.downloadAndInstall();
+      await relaunch();
+    } catch (e) {
+      setAppUpd({ state: "error", msg: String(e) });
+    }
   }
 
   return (
@@ -205,6 +241,36 @@ export default function Settings({ music }: { music: Music }) {
             </div>
           ))
         )}
+      </section>
+
+      <section className="section">
+        <h2>Trayload updates</h2>
+        <p className="muted">
+          Trayload {info?.version ?? ""}. Checking for an update contacts github.com (this project's releases) and
+          nothing else. Updates are signed and checked before they are installed.
+        </p>
+        <div className="row wrap">
+          <button
+            className="btn"
+            disabled={appUpd.state === "checking" || appUpd.state === "installing"}
+            onClick={checkApp}
+          >
+            {appUpd.state === "checking" ? "Checking…" : "Check for updates"}
+          </button>
+          {appUpd.state === "found" && (
+            <button className="btn primary" onClick={installApp}>
+              Install {appUpd.version} and restart
+            </button>
+          )}
+        </div>
+        {appUpd.state === "none" && <p className="muted">You are up to date.</p>}
+        {appUpd.state === "found" && (
+          <p className="muted" aria-live="polite">
+            Version {appUpd.version} is available.{appUpd.notes ? ` ${appUpd.notes}` : ""}
+          </p>
+        )}
+        {appUpd.state === "installing" && <p className="muted">Downloading and installing…</p>}
+        {appUpd.state === "error" && <p className="error">Could not check for updates: {appUpd.msg}</p>}
       </section>
 
       <section className="section">
