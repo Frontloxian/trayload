@@ -35,7 +35,8 @@ npm run tauri dev
 
 ## Legal
 
-- Trayload is released under the [MIT License](LICENSE). Any original music shipped with it belongs to its author and is not covered by that license unless stated.
+- Trayload's source code is released under the [GNU General Public License v3.0](LICENSE). If you distribute a modified version, you must share its source under the same license.
+- The original music shipped with Trayload and the Trayload logo are licensed under [CC BY-NC 4.0](LICENSE-MUSIC.md): free to share and adapt with credit, but not for commercial use.
 - Emulators that Trayload downloads are separate programs with their own licenses and are not part of Trayload.
 - Nintendo, PlayStation, Xbox, Sega and all other console and game names are trademarks of their owners. Trayload is not affiliated with or endorsed by any of them.
 - Use emulation only with games and files you legally own.
