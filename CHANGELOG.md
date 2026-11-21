@@ -2,7 +2,7 @@
 
 Each release's notes are shown inside Trayload (after updating, and under Settings > Trayload updates > What's new) and on the GitHub release page. The newest version goes at the top, under its own `## x.y.z` heading.
 
-## 1.2.0
+## 1.1.5
 
 ### New
 - **Games folder:** games you drag onto Trayload are now copied into `Documents\Trayload\Games`, in one folder per console (for example `Nintendo 64`). Your originals are never changed. Change the folder, or open it, from Settings. Games with several files (.cue and .bin, and so on) and several discs are kept together. Nothing is overwritten, identical files are skipped, a progress bar shows the copy, and you can cancel it.
