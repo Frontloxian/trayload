@@ -42,7 +42,14 @@ conf.bundle.shortDescription = "Emulator launcher for Windows";
 conf.bundle.licenseFile = "../LICENSE";
 conf.bundle.createUpdaterArtifacts = true;
 conf.bundle.windows = conf.bundle.windows ?? {};
-conf.bundle.windows.nsis = { ...(conf.bundle.windows.nsis ?? {}), installMode: "currentUser" };
+conf.bundle.windows.nsis = {
+  ...(conf.bundle.windows.nsis ?? {}),
+  installMode: "currentUser",
+  headerImage: "installer/header.bmp",
+  sidebarImage: "installer/sidebar.bmp",
+  installerIcon: "icons/icon.ico",
+  displayLanguageSelector: false,
+};
 conf.plugins = conf.plugins ?? {};
 conf.plugins.updater = {
   pubkey,

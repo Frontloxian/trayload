@@ -3,14 +3,14 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import type { Music } from "./useMusic";
 
-function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+export function Dialog({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.querySelector<HTMLElement>("button")?.focus();
   }, []);
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={title} ref={ref}
+      <div className={wide ? "dialog wide" : "dialog"} role="dialog" aria-modal="true" aria-label={title} ref={ref}
         onKeyDown={(e) => e.key === "Escape" && onClose()}>
         <h2>{title}</h2>
         {children}

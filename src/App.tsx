@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { Registry, ScanSummary, UpdateInfo } from "./types";
+import type { AppInfo, Registry, ScanSummary, UpdateInfo } from "./types";
 import Emulators from "./Emulators";
 import ErrorBoundary from "./ErrorBoundary";
 import Home from "./Home";
@@ -11,22 +11,26 @@ import MiniPlayer from "./MiniPlayer";
 import News from "./News";
 import Settings from "./Settings";
 import Setup from "./Setup";
-import { QuickSettings, ShortcutHelp, Welcome } from "./Overlays";
+import { Dialog, QuickSettings, ShortcutHelp, Welcome } from "./Overlays";
 import { useGamepad, useShortcuts } from "./useInput";
 import { useMusic } from "./useMusic";
+import { useAppUpdate } from "./useAppUpdate";
+import { Notes, WhatsNew, notesFor } from "./Notes";
+import { Icon, type IconName } from "./icons";
 import { listen } from "@tauri-apps/api/event";
 import logo from "./assets/trayload-logo-small.svg";
 import "./App.css";
 
 type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
 
-const NAV: { id: Page; label: string }[] = [
-  { id: "home", label: "Home" },
-  { id: "library", label: "Library" },
-  { id: "emulators", label: "Emulators" },
-  { id: "setup", label: "Setup checklist" },
-  { id: "news", label: "News" },
+const NAV: { id: Page; label: string; icon: IconName; sub: string }[] = [
+  { id: "home", label: "Home", icon: "home", sub: "Pick up where you left off" },
+  { id: "library", label: "Library", icon: "library", sub: "Your games, by system" },
+  { id: "emulators", label: "Emulators", icon: "emulators", sub: "Install and update emulators from their official sources" },
+  { id: "setup", label: "Setup checklist", icon: "setup", sub: "The files each system needs, checked for you" },
+  { id: "news", label: "News", icon: "news", sub: "Releases and updates from the emulation world" },
 ];
+const SETTINGS_SUB = "Artwork, music, folders, backups and updates";
 
 export default function App() {
   const [page, setPage] = useState<Page>("home");
@@ -36,6 +40,10 @@ export default function App() {
   const [detailId, setDetailId] = useState<number | null>(null);
   const [libKey, setLibKey] = useState(0);
   const music = useMusic();
+  const appUpdate = useAppUpdate();
+  const [version, setVersion] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
+  const [showUpdateNotes, setShowUpdateNotes] = useState(false);
   const [updates, setUpdates] = useState<UpdateInfo[]>([]);
   const [welcome, setWelcome] = useState(() => {
     try {
@@ -47,6 +55,29 @@ export default function App() {
   const [help, setHelp] = useState(false);
   const [quick, setQuick] = useState(false);
   const [scan, setScan] = useState<ScanSummary | null>(null);
+
+  // After an update, show what's new once. A fresh install sees the welcome dialog instead.
+  useEffect(() => {
+    invoke<AppInfo>("get_app_info")
+      .then((i) => {
+        setVersion(i.version);
+        let last: string | null = null;
+        let welcomed = false;
+        try {
+          last = localStorage.getItem("trayload.lastSeenVersion");
+          welcomed = localStorage.getItem("trayload.welcomed") === "1";
+        } catch {
+          /* nothing remembered */
+        }
+        if (last !== i.version && (last !== null || welcomed) && notesFor(i.version)) setShowNotes(true);
+        try {
+          localStorage.setItem("trayload.lastSeenVersion", i.version);
+        } catch {
+          /* optional */
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const closeWelcome = () => {
     setWelcome(false);
@@ -151,13 +182,17 @@ export default function App() {
     };
   }, []);
 
-  const title = [...NAV, { id: "settings" as Page, label: "Settings" }].find((n) => n.id === page)!.label;
+  const current = NAV.find((n) => n.id === page);
+  const title = current?.label ?? "Settings";
+  const subtitle = current?.sub ?? SETTINGS_SUB;
 
   return (
     <div className="shell">
       <nav className="sidebar" aria-label="Main">
         <div className="brand">
-          <img src={logo} alt="" width={28} height={28} /> Trayload
+          <img src={logo} alt="" width={30} height={30} />
+          <span className="brand-name">Trayload</span>
+          {version && <span className="brand-version">v{version}</span>}
         </div>
         {NAV.map((n) => (
           <button key={n.id} className="nav" aria-current={page === n.id ? "page" : undefined} onClick={() => {
@@ -165,7 +200,8 @@ export default function App() {
               if (detailId !== null) setLibKey((k) => k + 1);
               setDetailId(null);
             }}>
-            {n.label}
+            <Icon name={n.icon} />
+            <span className="nav-label">{n.label}</span>
             {n.id === "emulators" && updates.length > 0 && (
               <span className="badge" title="Updates ready">
                 {updates.length}
@@ -181,17 +217,55 @@ export default function App() {
           </div>
         )}
         <button className="nav" onClick={() => setQuick(true)}>
-          Quick settings
+          <Icon name="quick" />
+          <span className="nav-label">Quick settings</span>
         </button>
         <button className="nav" aria-current={page === "settings" ? "page" : undefined} onClick={() => setPage("settings")}>
-          Settings
+          <Icon name="settings" />
+          <span className="nav-label">Settings</span>
         </button>
       </nav>
 
       <main className="content">
-        <header>
+        <header className="page-head">
           <h1>{title}</h1>
+          <p className="page-sub">{subtitle}</p>
         </header>
+
+        {appUpdate.showBanner && (
+          <div className="update-banner" role="status">
+            <div className="update-text">
+              <strong>
+                {appUpdate.state === "installing"
+                  ? "Installing the update…"
+                  : `Trayload ${appUpdate.version} is available`}
+              </strong>
+              <span className="muted small">
+                {appUpdate.state === "installing"
+                  ? " Trayload will restart when it is done."
+                  : " You are on " + (version || "an older version") + "."}
+              </span>
+            </div>
+            {appUpdate.state !== "installing" && (
+              <div className="row">
+                {appUpdate.notes && (
+                  <button className="btn" onClick={() => setShowUpdateNotes(true)}>
+                    What's new
+                  </button>
+                )}
+                <button className="btn primary" onClick={() => void appUpdate.install()}>
+                  Install and restart
+                </button>
+                <button className="btn" onClick={appUpdate.later}>
+                  Later
+                </button>
+                <button className="link small" onClick={appUpdate.skip}>
+                  Skip this version
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && <p className="error">{error}</p>}
 
@@ -230,7 +304,7 @@ export default function App() {
         ) : page === "news" ? (
           <News updates={updates} onEmulators={() => setPage("emulators")} />
         ) : page === "settings" ? (
-          <Settings music={music} />
+          <Settings music={music} appUpdate={appUpdate} onWhatsNew={() => setShowNotes(true)} />
         ) : null}
         </ErrorBoundary>
       </main>
@@ -242,6 +316,17 @@ export default function App() {
             setPage(p);
           }}
         />
+      )}
+      {showNotes && version && <WhatsNew version={version} onClose={() => setShowNotes(false)} />}
+      {showUpdateNotes && (
+        <Dialog title={`Trayload ${appUpdate.version}`} onClose={() => setShowUpdateNotes(false)} wide>
+          <Notes markdown={appUpdate.notes ?? ""} />
+          <div className="row">
+            <button className="btn primary" onClick={() => setShowUpdateNotes(false)}>
+              Close
+            </button>
+          </div>
+        </Dialog>
       )}
       {help && <ShortcutHelp onClose={() => setHelp(false)} />}
       {quick && (

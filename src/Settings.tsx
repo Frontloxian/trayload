@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { check, type Update } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
 import BackupPanel from "./BackupPanel";
 import type { AppInfo, ArtSettings, RemovedGame } from "./types";
 import type { Music } from "./useMusic";
+import type { AppUpdate } from "./useAppUpdate";
 
-export default function Settings({ music }: { music: Music }) {
+export default function Settings({ music, appUpdate, onWhatsNew }: { music: Music; appUpdate: AppUpdate; onWhatsNew: () => void }) {
   const [hasKey, setHasKey] = useState(false);
   const [key, setKey] = useState("");
   const [folders, setFolders] = useState<string[]>([]);
@@ -20,13 +19,6 @@ export default function Settings({ music }: { music: Music }) {
       return false;
     }
   });
-  const [appUpd, setAppUpd] = useState<{
-    state: "idle" | "checking" | "none" | "found" | "installing" | "error";
-    version?: string;
-    notes?: string;
-    msg?: string;
-  }>({ state: "idle" });
-  const foundUpdate = useRef<Update | null>(null);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -49,33 +41,6 @@ export default function Settings({ music }: { music: Music }) {
       setError(String(e));
     }
     load();
-  }
-
-  async function checkApp() {
-    setAppUpd({ state: "checking" });
-    try {
-      const u = await check();
-      if (!u) {
-        setAppUpd({ state: "none" });
-        return;
-      }
-      foundUpdate.current = u;
-      setAppUpd({ state: "found", version: u.version, notes: u.body ?? "" });
-    } catch (e) {
-      setAppUpd({ state: "error", msg: String(e) });
-    }
-  }
-
-  async function installApp() {
-    const u = foundUpdate.current;
-    if (!u) return;
-    setAppUpd((s) => ({ ...s, state: "installing" }));
-    try {
-      await u.downloadAndInstall();
-      await relaunch();
-    } catch (e) {
-      setAppUpd({ state: "error", msg: String(e) });
-    }
   }
 
   return (
@@ -249,28 +214,39 @@ export default function Settings({ music }: { music: Music }) {
           Trayload {info?.version ?? ""}. Checking for an update contacts github.com (this project's releases) and
           nothing else. Updates are signed and checked before they are installed.
         </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={appUpdate.startupCheck}
+            onChange={(e) => appUpdate.setStartupCheck(e.target.checked)}
+          />{" "}
+          Check for Trayload updates when it starts
+        </label>
         <div className="row wrap">
           <button
             className="btn"
-            disabled={appUpd.state === "checking" || appUpd.state === "installing"}
-            onClick={checkApp}
+            disabled={appUpdate.state === "checking" || appUpdate.state === "installing"}
+            onClick={() => void appUpdate.check()}
           >
-            {appUpd.state === "checking" ? "Checking…" : "Check for updates"}
+            {appUpdate.state === "checking" ? "Checking…" : "Check for updates"}
           </button>
-          {appUpd.state === "found" && (
-            <button className="btn primary" onClick={installApp}>
-              Install {appUpd.version} and restart
+          {appUpdate.state === "found" && (
+            <button className="btn primary" onClick={() => void appUpdate.install()}>
+              Install {appUpdate.version} and restart
             </button>
           )}
+          <button className="btn" onClick={onWhatsNew}>
+            What's new
+          </button>
         </div>
-        {appUpd.state === "none" && <p className="muted">You are up to date.</p>}
-        {appUpd.state === "found" && (
+        {appUpdate.state === "none" && <p className="muted">You are up to date.</p>}
+        {appUpdate.state === "found" && (
           <p className="muted" aria-live="polite">
-            Version {appUpd.version} is available.{appUpd.notes ? ` ${appUpd.notes}` : ""}
+            Version {appUpdate.version} is available.
           </p>
         )}
-        {appUpd.state === "installing" && <p className="muted">Downloading and installing…</p>}
-        {appUpd.state === "error" && <p className="error">Could not check for updates: {appUpd.msg}</p>}
+        {appUpdate.state === "installing" && <p className="muted">Downloading and installing…</p>}
+        {appUpdate.state === "error" && <p className="error">Could not check for updates: {appUpdate.error}</p>}
       </section>
 
       <section className="section">
