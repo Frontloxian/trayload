@@ -1,1807 +1,1127 @@
 {
- "_note": "Windows registry. 'source' tells the launcher where to fetch the latest build; 'assetPattern' is a regex matched against release asset names. Patterns are first guesses: verify each against the real release page before shipping.",
- "systems": [
-  {
-   "id": "nes",
-   "name": "NES / Famicom",
-   "emulator": "Mesen 2",
-   "source": {
-    "type": "github",
-    "repo": "SourMesen/Mesen2",
-    "assetPattern": "Windows\\.zip$"
-   },
-   "exts": [
-    "nes",
-    "fds",
-    "unf"
-   ],
-   "artRepos": [
-    "Nintendo_-_Nintendo_Entertainment_System"
-   ],
-   "exePattern": "^Mesen\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "Nintendo NES and Famicom games run without extra files.",
-    "items": [
-     {
-      "label": "Famicom Disk System BIOS (disksys.rom)",
-      "required": false,
-      "namePattern": "^disksys\\.rom$",
-      "sizes": [
-       8192
+  "_note": "Windows registry. 'source' tells the launcher where to fetch the latest build; 'assetPattern' is a regex matched against release asset names. Patterns are first guesses: verify each against the real release page before shipping.",
+  "systems": [
+    {
+      "id": "nes",
+      "name": "NES / Famicom",
+      "emulator": "Mesen 2",
+      "source": {
+        "type": "github",
+        "repo": "SourMesen/Mesen2",
+        "assetPattern": "Windows\\.zip$"
+      },
+      "exts": [
+        "nes",
+        "fds",
+        "unf"
       ],
-      "deep": true,
-      "note": "Optional. Only for Famicom Disk System games. Put it in the Firmware folder."
-     }
-    ]
-   },
-   "backup": [
-    "Saves",
-    "SaveStates",
-    "settings.json"
-   ]
-  },
-  {
-   "id": "snes",
-   "name": "Super Nintendo",
-   "emulator": "Mesen 2",
-   "source": {
-    "type": "github",
-    "repo": "SourMesen/Mesen2",
-    "assetPattern": "Windows\\.zip$"
-   },
-   "exts": [
-    "sfc",
-    "smc",
-    "fig"
-   ],
-   "artRepos": [
-    "Nintendo_-_Super_Nintendo_Entertainment_System"
-   ],
-   "exePattern": "^Mesen\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "Most Super Nintendo games run without extra files.",
-    "items": [
-     {
-      "label": "Extra-chip firmware (dsp1.rom, st010.rom and similar)",
-      "required": false,
-      "namePattern": "^(dsp[1-4]b?|st01[018]|cx4)\\.(rom|bin)$",
-      "deep": true,
-      "note": "Optional. Only a few games with special chips ask for these."
-     }
-    ]
-   },
-   "backup": [
-    "Saves",
-    "SaveStates",
-    "settings.json"
-   ]
-  },
-  {
-   "id": "gb",
-   "name": "Game Boy / Color",
-   "emulator": "mGBA",
-   "source": {
-    "type": "github",
-    "repo": "mgba-emu/mgba",
-    "assetPattern": "win64.*\\.7z$"
-   },
-   "exts": [
-    "gb",
-    "gbc"
-   ],
-   "exePattern": "^mgba\\.exe$",
-   "portableMarker": "portable.ini",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "artRepos": [
-    "Nintendo_-_Game_Boy",
-    "Nintendo_-_Game_Boy_Color"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "Game Boy and Game Boy Color games run without a BIOS. A real boot ROM is optional.",
-    "items": []
-   },
-   "backup": [
-    "portable.ini",
-    "saves",
-    "states"
-   ]
-  },
-  {
-   "id": "gba",
-   "name": "Game Boy Advance",
-   "emulator": "mGBA",
-   "source": {
-    "type": "github",
-    "repo": "mgba-emu/mgba",
-    "assetPattern": "win64.*\\.7z$"
-   },
-   "exts": [
-    "gba"
-   ],
-   "exePattern": "^mgba\\.exe$",
-   "portableMarker": "portable.ini",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "artRepos": [
-    "Nintendo_-_Game_Boy_Advance"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "mGBA has a built-in replacement BIOS, so games run without one. A real GBA BIOS is optional.",
-    "items": [
-     {
-      "label": "GBA BIOS (gba_bios.bin)",
-      "required": false,
-      "namePattern": "^gba_bios\\.bin$",
-      "sizes": [
-       16384
+      "artRepos": [
+        "Nintendo_-_Nintendo_Entertainment_System"
       ],
-      "deep": true,
-      "note": "Optional. Pick it in mGBA under Tools, Settings, BIOS."
-     }
-    ]
-   },
-   "backup": [
-    "portable.ini",
-    "saves",
-    "states"
-   ]
-  },
-  {
-   "id": "n64",
-   "name": "Nintendo 64",
-   "emulator": "RMG",
-   "source": {
-    "type": "github",
-    "repo": "Rosalie241/RMG",
-    "assetPattern": "Portable-Windows64.*\\.zip$"
-   },
-   "exts": [
-    "z64",
-    "n64",
-    "v64"
-   ],
-   "artRepos": [
-    "Nintendo_-_Nintendo_64"
-   ],
-   "exePattern": "^RMG\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "Nintendo 64 games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "Save",
-    "Config"
-   ]
-  },
-  {
-   "id": "nds",
-   "name": "Nintendo DS",
-   "emulator": "melonDS",
-   "source": {
-    "type": "github",
-    "repo": "melonDS-emu/melonDS",
-    "assetPattern": "windows-x86_64\\.zip$"
-   },
-   "exts": [
-    "nds",
-    "dsi"
-   ],
-   "artRepos": [
-    "Nintendo_-_Nintendo_DS"
-   ],
-   "exePattern": "^melonDS\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "melonDS has a built-in replacement BIOS and firmware, so games run without these. Real files are optional and improve compatibility.",
-    "items": [
-     {
-      "label": "DS ARM7 BIOS (bios7.bin)",
-      "required": false,
-      "namePattern": "^bios7\\.bin$",
-      "sizes": [
-       16384
+      "exePattern": "^Mesen\\.exe$",
+      "launchArgs": [
+        "{rom}"
       ],
-      "deep": true
-     },
-     {
-      "label": "DS ARM9 BIOS (bios9.bin)",
-      "required": false,
-      "namePattern": "^bios9\\.bin$",
-      "sizes": [
-       4096
-      ],
-      "deep": true
-     },
-     {
-      "label": "DS firmware (firmware.bin)",
-      "required": false,
-      "namePattern": "^firmware\\.bin$",
-      "sizes": [
-       131072,
-       262144,
-       524288
-      ],
-      "deep": true,
-      "note": "Set the paths in melonDS under Config, Emu settings, DS-mode."
-     }
-    ]
-   },
-   "backup": [
-    "melonDS.toml"
-   ]
-  },
-  {
-   "id": "3ds",
-   "name": "Nintendo 3DS",
-   "emulator": "Azahar",
-   "source": {
-    "type": "github",
-    "repo": "azahar-emu/azahar",
-    "assetPattern": "azahar-windows-msvc-[\\d.]+\\.zip$"
-   },
-   "exts": [
-    "3ds",
-    "cci",
-    "cxi"
-   ],
-   "artRepos": [
-    "Nintendo_-_Nintendo_3DS"
-   ],
-   "exePattern": "^azahar(-qt)?\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "portableMarker": "user/",
-   "setup": {
-    "folder": "user",
-    "intro": "Most 3DS games run without extra files.",
-    "items": [
-     {
-      "label": "Encrypted-game keys (aes_keys.txt)",
-      "required": false,
-      "namePattern": "^aes_keys\\.txt$",
-      "deep": true,
-      "note": "Optional. Only for games that are still encrypted. Put it in the sysdata folder."
-     }
-    ]
-   },
-   "backup": [
-    "user/sdmc",
-    "user/states",
-    "user/config"
-   ]
-  },
-  {
-   "id": "gc",
-   "name": "GameCube",
-   "emulator": "Dolphin",
-   "source": {
-    "type": "page",
-    "url": "https://dolphin-emu.org/download/",
-    "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z",
-    "fallbackUrl": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z"
-   },
-   "exts": [
-    "iso",
-    "gcm",
-    "rvz",
-    "gcz"
-   ],
-   "exePattern": "^dolphin\\.exe$",
-   "portableMarker": "portable.txt",
-   "launchArgs": [
-    "-b",
-    "-e",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Nintendo_-_GameCube"
-   ],
-   "setup": {
-    "folder": "User/GC",
-    "intro": "GameCube games run without any extra files.",
-    "items": [
-     {
-      "label": "GameCube BIOS (IPL.bin)",
-      "required": false,
-      "namePattern": "^IPL\\.bin$",
-      "deep": true,
-      "note": "Optional. Only needed to see the GameCube boot logo. Put it in a USA, EUR or JAP folder inside this one."
-     }
-    ]
-   },
-   "backup": [
-    "User/GC",
-    "User/Wii",
-    "User/StateSaves",
-    "User/Config"
-   ]
-  },
-  {
-   "id": "wii",
-   "name": "Wii",
-   "emulator": "Dolphin",
-   "source": {
-    "type": "page",
-    "url": "https://dolphin-emu.org/download/",
-    "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z",
-    "fallbackUrl": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z"
-   },
-   "exts": [
-    "iso",
-    "wbfs",
-    "rvz",
-    "wad"
-   ],
-   "exePattern": "^dolphin\\.exe$",
-   "portableMarker": "portable.txt",
-   "launchArgs": [
-    "-b",
-    "-e",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Nintendo_-_Wii"
-   ],
-   "setup": {
-    "folder": "User",
-    "intro": "Wii games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "User/GC",
-    "User/Wii",
-    "User/StateSaves",
-    "User/Config"
-   ]
-  },
-  {
-   "id": "wiiu",
-   "name": "Wii U",
-   "emulator": "Cemu",
-   "source": {
-    "type": "github",
-    "repo": "cemu-project/Cemu",
-    "assetPattern": "windows-x64\\.zip$"
-   },
-   "exts": [
-    "wud",
-    "wux",
-    "wua",
-    "rpx"
-   ],
-   "artRepos": [
-    "Nintendo_-_Wii_U"
-   ],
-   "exePattern": "^Cemu\\.exe$",
-   "launchArgs": [
-    "-g",
-    "{rom}"
-   ],
-   "portableMarker": "portable/",
-   "setup": {
-    "folder": ".",
-    "intro": "Cemu needs the Wii U keys file to open encrypted game dumps. Decrypted dumps don't need it.",
-    "items": [
-     {
-      "label": "Wii U keys (keys.txt)",
-      "required": false,
-      "namePattern": "^keys\\.txt$",
-      "deep": true,
-      "note": "Optional if your games are decrypted. Use keys from your own console. Put it next to Cemu.exe."
-     }
-    ]
-   },
-   "backup": [
-    "mlc01/usr/save",
-    "settings.xml"
-   ]
-  },
-  {
-   "id": "switch",
-   "name": "Nintendo Switch",
-   "emulator": "Eden",
-   "source": {
-    "type": "forgejo",
-    "host": "git.eden-emu.dev",
-    "repo": "eden-emu/eden",
-    "assetPattern": "^Eden-Windows-.*-amd64-msvc-standard\\.zip$"
-   },
-   "exts": [
-    "nsp",
-    "xci"
-   ],
-   "exePattern": "^eden\\.exe$",
-   "portableMarker": "user/",
-   "launchArgs": [
-    "-g",
-    "{rom}"
-   ],
-   "warning": "Needs prod.keys and firmware dumped from your own Switch. Trayload never provides or links them. Eden is downloaded from its official release server (git.eden-emu.dev, with files from stable.eden-emu.dev).",
-   "setup": {
-    "folder": "user",
-    "intro": "Eden needs prod.keys, and many games also need firmware, both from your own Switch. Trayload doesn't provide or link them.",
-    "items": [
-     {
-      "label": "Switch keys (prod.keys)",
-      "required": true,
-      "namePattern": "^prod\\.keys$",
-      "deep": true,
-      "note": "Goes in the keys folder inside this one."
-     },
-     {
-      "label": "Switch firmware",
-      "required": false,
-      "namePattern": "\\.nca$",
-      "deep": true,
-      "note": "Needed by many games. Install it from inside Eden (Tools, then Install Firmware)."
-     }
-    ]
-   },
-   "backup": [
-    "user/nand/user/save",
-    "user/config"
-   ]
-  },
-  {
-   "id": "ps1",
-   "name": "PlayStation",
-   "emulator": "DuckStation",
-   "source": {
-    "type": "github",
-    "repo": "stenzek/duckstation",
-    "assetPattern": "windows-x64.*\\.zip$"
-   },
-   "exts": [
-    "bin",
-    "cue",
-    "chd",
-    "pbp"
-   ],
-   "exePattern": "^duckstation-qt.*\\.exe$",
-   "portableMarker": "portable.txt",
-   "launchArgs": [
-    "-batch",
-    "--",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sony_-_PlayStation"
-   ],
-   "setup": {
-    "folder": "bios",
-    "intro": "DuckStation needs a PlayStation BIOS file from your own console. One file is enough.",
-    "items": [
-     {
-      "label": "PlayStation BIOS",
-      "required": true,
-      "sizes": [
-       524288
-      ],
-      "note": "A 512 KB .bin file (for example scph5501.bin). Pick one that matches your games' region."
-     }
-    ]
-   },
-   "backup": [
-    "memcards",
-    "savestates",
-    "settings.ini"
-   ]
-  },
-  {
-   "id": "ps2",
-   "name": "PlayStation 2",
-   "emulator": "PCSX2",
-   "source": {
-    "type": "github",
-    "repo": "PCSX2/pcsx2",
-    "assetPattern": "windows-x64-Qt\\.7z$"
-   },
-   "exts": [
-    "iso",
-    "chd",
-    "cso"
-   ],
-   "artRepos": [
-    "Sony_-_PlayStation_2"
-   ],
-   "setup": {
-    "folder": "bios",
-    "intro": "PCSX2 needs a PlayStation 2 BIOS from your own console.",
-    "items": [
-     {
-      "label": "PlayStation 2 BIOS",
-      "required": true,
-      "sizes": [
-       4194304
-      ],
-      "note": "A 4 MB .bin file. Pick one that matches your games' region."
-     }
-    ]
-   },
-   "exePattern": "^pcsx2-qt\\.exe$",
-   "launchArgs": [
-    "-batch",
-    "--",
-    "{rom}"
-   ],
-   "portableMarker": "portable.txt",
-   "backup": [
-    "memcards",
-    "sstates",
-    "inis"
-   ]
-  },
-  {
-   "id": "ps3",
-   "name": "PlayStation 3",
-   "emulator": "RPCS3",
-   "source": {
-    "type": "github",
-    "repo": "RPCS3/rpcs3-binaries-win",
-    "assetPattern": "win64_msvc\\.7z$",
-    "versionRegex": "rpcs3-(v[\\d.]+-\\d+)"
-   },
-   "exts": [
-    "iso",
-    "pkg"
-   ],
-   "artRepos": [
-    "Sony_-_PlayStation_3"
-   ],
-   "exePattern": "^rpcs3\\.exe$",
-   "launchArgs": [
-    "--no-gui",
-    "{rom}"
-   ],
-   "setup": {
-    "folder": "dev_flash",
-    "intro": "RPCS3 needs the PS3 system software from your own console, installed from RPCS3 under File, Install Firmware.",
-    "items": [
-     {
-      "label": "PS3 system software (installed)",
-      "required": true,
-      "namePattern": "^liblv2\\.sprx$",
-      "deep": true,
-      "note": "Found after the firmware is installed. This check is a best guess."
-     }
-    ]
-   },
-   "backup": [
-    "dev_hdd0/home",
-    "savestates",
-    "config"
-   ]
-  },
-  {
-   "id": "psp",
-   "name": "PSP",
-   "emulator": "PPSSPP",
-   "source": {
-    "type": "page",
-    "url": "https://www.ppsspp.org/download/",
-    "assetPattern": "(?:https://www\\.ppsspp\\.org)?/files/[\\w.]+/ppsspp_win\\.zip",
-    "fallbackUrl": "https://www.ppsspp.org/files/1_20_4/ppsspp_win.zip"
-   },
-   "exts": [
-    "iso",
-    "cso",
-    "pbp"
-   ],
-   "artRepos": [
-    "Sony_-_PlayStation_Portable"
-   ],
-   "exePattern": "^PPSSPPWindows64\\.exe$",
-   "portableMarker": "memstick/",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "PSP games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "memstick/PSP/SAVEDATA",
-    "memstick/PSP/PPSSPP_STATE",
-    "memstick/PSP/SYSTEM"
-   ]
-  },
-  {
-   "id": "vita",
-   "name": "PS Vita",
-   "emulator": "Vita3K",
-   "source": {
-    "type": "github",
-    "repo": "Vita3K/Vita3K",
-    "assetPattern": "^windows-latest\\.zip$"
-   },
-   "exts": [
-    "vpk"
-   ],
-   "artRepos": [
-    "Sony_-_PlayStation_Vita"
-   ],
-   "exePattern": "^Vita3K\\.exe$",
-   "setup": {
-    "folder": ".",
-    "intro": "Vita3K needs the PS Vita firmware and font package from your own console, installed from Vita3K under File. Install each game once in Vita3K (File, Install .vpk). After that, Play starts it by its Title ID.",
-    "items": [
-     {
-      "label": "PS Vita firmware (installed)",
-      "required": false,
-      "namePattern": "^libSceLibc\\.suprx$",
-      "deep": true,
-      "note": "Found after the firmware is installed. This check is a best guess, so it never blocks anything."
-     }
-    ]
-   },
-   "launchArgs": [
-    "-r",
-    "{titleid}"
-   ],
-   "backup": [
-    "ux0/user",
-    "config.yml"
-   ]
-  },
-  {
-   "id": "dc",
-   "name": "Dreamcast",
-   "emulator": "Flycast",
-   "source": {
-    "type": "github",
-    "repo": "flyinghead/flycast",
-    "assetPattern": "flycast-win64-.*\\.zip$"
-   },
-   "exts": [
-    "gdi",
-    "cdi",
-    "chd"
-   ],
-   "artRepos": [
-    "Sega_-_Dreamcast"
-   ],
-   "setup": {
-    "folder": "data",
-    "intro": "Flycast has a built-in replacement BIOS, so these files are optional. Real ones can improve compatibility.",
-    "items": [
-     {
-      "label": "Dreamcast boot ROM (dc_boot.bin)",
-      "required": false,
-      "namePattern": "^dc_boot\\.bin$",
-      "sizes": [
-       2097152
+      "setup": {
+        "folder": ".",
+        "intro": "Nintendo NES and Famicom games run without extra files.",
+        "items": [
+          {
+            "label": "Famicom Disk System BIOS (disksys.rom)",
+            "required": false,
+            "namePattern": "^disksys\\.rom$",
+            "sizes": [
+              8192
+            ],
+            "deep": true,
+            "note": "Optional. Only for Famicom Disk System games. Put it in the Firmware folder."
+          }
+        ]
+      },
+      "backup": [
+        "Saves",
+        "SaveStates",
+        "settings.json"
       ]
-     },
-     {
-      "label": "Dreamcast flash (dc_flash.bin)",
-      "required": false,
-      "namePattern": "^dc_flash\\.bin$",
-      "sizes": [
-       131072
+    },
+    {
+      "id": "snes",
+      "name": "Super Nintendo",
+      "emulator": "Mesen 2",
+      "source": {
+        "type": "github",
+        "repo": "SourMesen/Mesen2",
+        "assetPattern": "Windows\\.zip$"
+      },
+      "exts": [
+        "sfc",
+        "smc",
+        "fig"
+      ],
+      "artRepos": [
+        "Nintendo_-_Super_Nintendo_Entertainment_System"
+      ],
+      "exePattern": "^Mesen\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "Most Super Nintendo games run without extra files.",
+        "items": [
+          {
+            "label": "Extra-chip firmware (dsp1.rom, st010.rom and similar)",
+            "required": false,
+            "namePattern": "^(dsp[1-4]b?|st01[018]|cx4)\\.(rom|bin)$",
+            "deep": true,
+            "note": "Optional. Only a few games with special chips ask for these."
+          }
+        ]
+      },
+      "backup": [
+        "Saves",
+        "SaveStates",
+        "settings.json"
       ]
-     }
-    ]
-   },
-   "exePattern": "^flycast\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "portableMarker": "data/",
-   "backup": [
-    "data"
-   ]
-  },
-  {
-   "id": "xbox",
-   "name": "Original Xbox",
-   "emulator": "xemu",
-   "source": {
-    "type": "github",
-    "repo": "xemu-project/xemu",
-    "assetPattern": "^xemu-win-x86_64-release\\.zip$"
-   },
-   "exts": [
-    "iso"
-   ],
-   "artRepos": [
-    "Microsoft_-_Xbox"
-   ],
-   "exePattern": "^xemu\\.exe$",
-   "launchArgs": [
-    "-dvd_path",
-    "{rom}"
-   ],
-   "setup": {
-    "folder": ".",
-    "intro": "xemu needs three files from your own original Xbox: the boot ROM, the BIOS and a hard drive image. Set their paths in xemu under System.",
-    "items": [
-     {
-      "label": "MCPX boot ROM",
-      "required": true,
-      "namePattern": "^mcpx.*\\.bin$",
-      "sizes": [
-       512
+    },
+    {
+      "id": "gb",
+      "name": "Game Boy / Color",
+      "emulator": "mGBA",
+      "source": {
+        "type": "github",
+        "repo": "mgba-emu/mgba",
+        "assetPattern": "win64.*\\.7z$"
+      },
+      "exts": [
+        "gb",
+        "gbc"
       ],
-      "deep": true
-     },
-     {
-      "label": "Xbox BIOS (flash ROM)",
-      "required": true,
-      "namePattern": "\\.bin$",
-      "sizes": [
-       262144,
-       524288,
-       1048576
+      "exePattern": "^mgba\\.exe$",
+      "portableMarker": "portable.ini",
+      "launchArgs": [
+        "{rom}"
       ],
-      "deep": true
-     },
-     {
-      "label": "Hard drive image",
-      "required": true,
-      "namePattern": "\\.qcow2$",
-      "deep": true
-     }
-    ]
-   },
-   "backup": [
-    "xemu.toml"
-   ]
-  },
-  {
-   "id": "x360",
-   "name": "Xbox 360",
-   "emulator": "Xenia Canary",
-   "source": {
-    "type": "github",
-    "repo": "xenia-canary/xenia-canary-releases",
-    "assetPattern": "windows.*\\.zip$"
-   },
-   "exts": [
-    "iso",
-    "xex"
-   ],
-   "artRepos": [
-    "Microsoft_-_Xbox_360"
-   ],
-   "exePattern": "^xenia_canary\\.exe$",
-   "launchArgs": [
-    "{rom}"
-   ],
-   "portableMarker": "portable.txt",
-   "setup": {
-    "folder": ".",
-    "intro": "Xenia Canary runs without BIOS or firmware files.",
-    "items": []
-   },
-   "backup": [
-    "content",
-    "xenia-canary.config.toml"
-   ]
-  },
-  {
-   "id": "sms",
-   "name": "Master System",
-   "emulator": "Genesis Plus GX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "genesis_plus_gx"
-   },
-   "exts": [
-    "sms"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\genesis_plus_gx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_Master_System_-_Mark_III"
-   ],
-   "aliases": [
-    "mastersystem",
-    "sega master"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "gg",
-   "name": "Game Gear",
-   "emulator": "Genesis Plus GX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "genesis_plus_gx"
-   },
-   "exts": [
-    "gg"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\genesis_plus_gx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_Game_Gear"
-   ],
-   "aliases": [
-    "gamegear"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "sg1000",
-   "name": "SG-1000",
-   "emulator": "Genesis Plus GX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "genesis_plus_gx"
-   },
-   "exts": [
-    "sg"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\genesis_plus_gx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_SG-1000"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "genesis",
-   "name": "Sega Genesis / Mega Drive",
-   "emulator": "Genesis Plus GX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "genesis_plus_gx"
-   },
-   "exts": [
-    "md",
-    "gen",
-    "smd",
-    "bin"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\genesis_plus_gx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_Mega_Drive_-_Genesis"
-   ],
-   "aliases": [
-    "megadrive",
-    "genesis",
-    "sega md"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "segacd",
-   "name": "Sega CD",
-   "emulator": "Genesis Plus GX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "genesis_plus_gx"
-   },
-   "exts": [
-    "cue",
-    "chd",
-    "iso"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\genesis_plus_gx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_Mega-CD_-_Sega_CD"
-   ],
-   "aliases": [
-    "megacd",
-    "sega cd"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Sega CD games need a Sega CD BIOS from your own console, matching the game's region.",
-    "items": [
-     {
-      "label": "Sega CD BIOS (bios_CD_U.bin, bios_CD_E.bin or bios_CD_J.bin)",
-      "required": true,
-      "namePattern": "^bios_CD_[UEJ]\\.bin$",
-      "deep": true,
-      "note": "Put it in the system folder. Pick the region that matches your games."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "s32x",
-   "name": "Sega 32X",
-   "emulator": "PicoDrive",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "picodrive"
-   },
-   "exts": [
-    "32x"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\picodrive_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_32X"
-   ],
-   "aliases": [
-    "32x"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "saturn",
-   "name": "Sega Saturn",
-   "emulator": "Kronos",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "kronos"
-   },
-   "exts": [
-    "cue",
-    "chd",
-    "ccd",
-    "mds"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\kronos_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Sega_-_Saturn"
-   ],
-   "aliases": [
-    "saturn"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Saturn games need a Saturn BIOS from your own console.",
-    "items": [
-     {
-      "label": "Saturn BIOS (saturn_bios.bin)",
-      "required": true,
-      "namePattern": "^saturn_bios\\.bin$",
-      "deep": true,
-      "note": "Kronos looks for this exact name. Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "pce",
-   "name": "PC Engine / TurboGrafx-16",
-   "emulator": "Beetle PCE",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "mednafen_pce"
-   },
-   "exts": [
-    "pce",
-    "sgx",
-    "cue",
-    "chd",
-    "ccd"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\mednafen_pce_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "NEC_-_PC_Engine_-_TurboGrafx_16",
-    "NEC_-_PC_Engine_CD_-_TurboGrafx-CD"
-   ],
-   "aliases": [
-    "pcengine",
-    "turbografx",
-    "tg16"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Cartridge games run without extra files. CD games need the System Card.",
-    "items": [
-     {
-      "label": "System Card (syscard3.pce)",
-      "required": false,
-      "namePattern": "^syscard3\\.pce$",
-      "deep": true,
-      "note": "Optional. Only for PC Engine CD games. Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "a2600",
-   "name": "Atari 2600",
-   "emulator": "Stella",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "stella"
-   },
-   "exts": [
-    "a26",
-    "bin"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\stella_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Atari_-_2600"
-   ],
-   "aliases": [
-    "atari2600",
-    "2600"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "a5200",
-   "name": "Atari 5200",
-   "emulator": "a5200",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "a5200"
-   },
-   "exts": [
-    "a52"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\a5200_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Atari_-_5200"
-   ],
-   "aliases": [
-    "atari5200",
-    "5200"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Atari 5200 games need the 5200 BIOS from your own console.",
-    "items": [
-     {
-      "label": "Atari 5200 BIOS (5200.rom)",
-      "required": true,
-      "namePattern": "^5200\\.rom$",
-      "deep": true,
-      "note": "Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "a7800",
-   "name": "Atari 7800",
-   "emulator": "ProSystem",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "prosystem"
-   },
-   "exts": [
-    "a78"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\prosystem_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Atari_-_7800"
-   ],
-   "aliases": [
-    "atari7800",
-    "7800"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Atari 7800 games run best with the 7800 BIOS from your own console.",
-    "items": [
-     {
-      "label": "Atari 7800 BIOS",
-      "required": false,
-      "namePattern": "^7800 BIOS.*\\.rom$",
-      "deep": true,
-      "note": "Recommended. Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "lynx",
-   "name": "Atari Lynx",
-   "emulator": "Handy",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "handy"
-   },
-   "exts": [
-    "lnx",
-    "lyx"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\handy_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Atari_-_Lynx"
-   ],
-   "aliases": [
-    "atarilynx",
-    "lynx"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Lynx games need the Lynx boot ROM from your own console.",
-    "items": [
-     {
-      "label": "Lynx boot ROM (lynxboot.img)",
-      "required": true,
-      "namePattern": "^lynxboot\\.img$",
-      "deep": true,
-      "note": "Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "jaguar",
-   "name": "Atari Jaguar",
-   "emulator": "Virtual Jaguar",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "virtualjaguar"
-   },
-   "exts": [
-    "j64",
-    "jag"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\virtualjaguar_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Atari_-_Jaguar"
-   ],
-   "aliases": [
-    "atarijaguar",
-    "jaguar"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "ngp",
-   "name": "Neo Geo Pocket",
-   "emulator": "Beetle NeoPop",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "mednafen_ngp"
-   },
-   "exts": [
-    "ngp",
-    "ngc",
-    "ngpc",
-    "npc"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\mednafen_ngp_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "SNK_-_Neo_Geo_Pocket",
-    "SNK_-_Neo_Geo_Pocket_Color"
-   ],
-   "aliases": [
-    "neogeopocket",
-    "ngpc"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "wswan",
-   "name": "WonderSwan",
-   "emulator": "Beetle WonderSwan",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "mednafen_wswan"
-   },
-   "exts": [
-    "ws",
-    "wsc",
-    "pc2"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\mednafen_wswan_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Bandai_-_WonderSwan",
-    "Bandai_-_WonderSwan_Color"
-   ],
-   "aliases": [
-    "wonderswan"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "vb",
-   "name": "Virtual Boy",
-   "emulator": "Beetle VB",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "mednafen_vb"
-   },
-   "exts": [
-    "vb",
-    "vboy"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\mednafen_vb_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Nintendo_-_Virtual_Boy"
-   ],
-   "aliases": [
-    "virtualboy"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "pokemini",
-   "name": "Pokemon Mini",
-   "emulator": "PokeMini",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "pokemini"
-   },
-   "exts": [
-    "min"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\pokemini_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Nintendo_-_Pokemon_Mini"
-   ],
-   "aliases": [
-    "pokemonmini"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "PokeMini has a built-in replacement BIOS, so games run without one. A real BIOS is optional.",
-    "items": [
-     {
-      "label": "Pokemon Mini BIOS (bios.min)",
-      "required": false,
-      "namePattern": "^bios\\.min$",
-      "deep": true,
-      "note": "Optional. Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "coleco",
-   "name": "ColecoVision",
-   "emulator": "Gearcoleco",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "gearcoleco"
-   },
-   "exts": [
-    "col",
-    "cv"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\gearcoleco_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Coleco_-_ColecoVision"
-   ],
-   "aliases": [
-    "colecovision"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "ColecoVision games need the ColecoVision BIOS from your own console.",
-    "items": [
-     {
-      "label": "ColecoVision BIOS (colecovision.rom)",
-      "required": true,
-      "namePattern": "^colecovision\\.rom$",
-      "deep": true,
-      "note": "Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "intv",
-   "name": "Intellivision",
-   "emulator": "FreeIntv",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "freeintv"
-   },
-   "exts": [
-    "int"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\freeintv_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Mattel_-_Intellivision"
-   ],
-   "aliases": [
-    "intellivision"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "Intellivision games need two BIOS files from your own console.",
-    "items": [
-     {
-      "label": "Executive ROM (exec.bin)",
-      "required": true,
-      "namePattern": "^exec\\.bin$",
-      "deep": true
-     },
-     {
-      "label": "Graphics ROM (grom.bin)",
-      "required": true,
-      "namePattern": "^grom\\.bin$",
-      "deep": true
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "vectrex",
-   "name": "Vectrex",
-   "emulator": "vecx",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "vecx"
-   },
-   "exts": [
-    "vec"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\vecx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "GCE_-_Vectrex"
-   ],
-   "aliases": [
-    "vectrex"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "These games run without extra files.",
-    "items": []
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "msx",
-   "name": "MSX",
-   "emulator": "blueMSX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "bluemsx"
-   },
-   "exts": [
-    "mx1",
-    "mx2",
-    "dsk",
-    "cas"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\bluemsx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "Microsoft_-_MSX",
-    "Microsoft_-_MSX2"
-   ],
-   "aliases": [
-    "msx2"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "blueMSX needs its Machines and Databases folders from the full blueMSX package, placed in the system folder. Use files you already have.",
-    "items": [
-     {
-      "label": "MSX machine files (Machines folder)",
-      "required": false,
-      "namePattern": "\\.(rom|cfg)$",
-      "deep": true,
-      "note": "This check is a best guess and never blocks anything."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "3do",
-   "name": "3DO",
-   "emulator": "Opera",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "opera"
-   },
-   "exts": [
-    "cue",
-    "chd",
-    "iso"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\opera_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "The_3DO_Company_-_3DO"
-   ],
-   "aliases": [
-    "3do",
-    "panasonic3do"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "3DO games need a 3DO BIOS from your own console.",
-    "items": [
-     {
-      "label": "3DO BIOS (for example panafz10.bin)",
-      "required": true,
-      "namePattern": "^(panafz1.*|goldstar|sanyotry)\\.bin$",
-      "deep": true,
-      "note": "Put it in the system folder."
-     }
-    ]
-   },
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ]
-  },
-  {
-   "id": "pcfx",
-   "name": "PC-FX",
-   "emulator": "Beetle PC-FX",
-   "tier": "core",
-   "source": {
-    "type": "core",
-    "core": "mednafen_pcfx"
-   },
-   "exts": [
-    "cue",
-    "chd",
-    "ccd",
-    "toc"
-   ],
-   "exePattern": "^retroarch\\.exe$",
-   "launchArgs": [
-    "-L",
-    "cores\\mednafen_pcfx_libretro.dll",
-    "-f",
-    "{rom}"
-   ],
-   "artRepos": [
-    "NEC_-_PC-FX"
-   ],
-   "aliases": [
-    "pcfx"
-   ],
-   "backup": [
-    "saves",
-    "states",
-    "retroarch.cfg"
-   ],
-   "setup": {
-    "folder": "system",
-    "intro": "PC-FX games need the PC-FX BIOS from your own console.",
-    "items": [
-     {
-      "label": "PC-FX BIOS (pcfx.rom)",
-      "required": true,
-      "namePattern": "^pcfx\\.rom$",
-      "deep": true,
-      "note": "Put it in the system folder."
-     }
-    ]
-   }
-  },
-  {
-   "id": "arcade",
-   "name": "Arcade",
-   "emulator": "MAME",
-   "source": {
-    "type": "github",
-    "repo": "mamedev/mame",
-    "assetPattern": "mame.*64bit.*\\.exe$"
-   },
-   "exts": [
-    "zip"
-   ],
-   "artRepos": [
-    "MAME"
-   ],
-   "setup": {
-    "folder": "roms",
-    "intro": "MAME needs a ROM set (a .zip per game) that matches its version. Trayload doesn't provide or link them.",
-    "items": [
-     {
-      "label": "Arcade ROM sets (.zip files)",
-      "required": false,
-      "namePattern": "\\.zip$",
-      "deep": true,
-      "note": "Optional here. Put them in the roms folder."
-     }
-    ]
-   }
-  }
- ],
- "pending": "Still to add: Switch 2 via Lichii (on hold until games can be started from Trayload), then MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling). PS5 is watch-only: follow it in the News tab, no install entry."
+      "artRepos": [
+        "Nintendo_-_Game_Boy",
+        "Nintendo_-_Game_Boy_Color"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "Game Boy and Game Boy Color games run without a BIOS. A real boot ROM is optional.",
+        "items": []
+      },
+      "backup": [
+        "portable.ini",
+        "saves",
+        "states"
+      ]
+    },
+    {
+      "id": "gba",
+      "name": "Game Boy Advance",
+      "emulator": "mGBA",
+      "source": {
+        "type": "github",
+        "repo": "mgba-emu/mgba",
+        "assetPattern": "win64.*\\.7z$"
+      },
+      "exts": [
+        "gba"
+      ],
+      "exePattern": "^mgba\\.exe$",
+      "portableMarker": "portable.ini",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Nintendo_-_Game_Boy_Advance"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "mGBA has a built-in replacement BIOS, so games run without one. A real GBA BIOS is optional.",
+        "items": [
+          {
+            "label": "GBA BIOS (gba_bios.bin)",
+            "required": false,
+            "namePattern": "^gba_bios\\.bin$",
+            "sizes": [
+              16384
+            ],
+            "deep": true,
+            "note": "Optional. Pick it in mGBA under Tools, Settings, BIOS."
+          }
+        ]
+      },
+      "backup": [
+        "portable.ini",
+        "saves",
+        "states"
+      ]
+    },
+    {
+      "id": "n64",
+      "name": "Nintendo 64",
+      "emulator": "RMG",
+      "source": {
+        "type": "github",
+        "repo": "Rosalie241/RMG",
+        "assetPattern": "Portable-Windows64.*\\.zip$"
+      },
+      "exts": [
+        "z64",
+        "n64",
+        "v64"
+      ],
+      "artRepos": [
+        "Nintendo_-_Nintendo_64"
+      ],
+      "exePattern": "^RMG\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "Nintendo 64 games run without extra files.",
+        "items": []
+      },
+      "backup": [
+        "Save",
+        "Config"
+      ]
+    },
+    {
+      "id": "nds",
+      "name": "Nintendo DS",
+      "emulator": "melonDS",
+      "source": {
+        "type": "github",
+        "repo": "melonDS-emu/melonDS",
+        "assetPattern": "windows-x86_64\\.zip$"
+      },
+      "exts": [
+        "nds",
+        "dsi"
+      ],
+      "artRepos": [
+        "Nintendo_-_Nintendo_DS"
+      ],
+      "exePattern": "^melonDS\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "melonDS has a built-in replacement BIOS and firmware, so games run without these. Real files are optional and improve compatibility.",
+        "items": [
+          {
+            "label": "DS ARM7 BIOS (bios7.bin)",
+            "required": false,
+            "namePattern": "^bios7\\.bin$",
+            "sizes": [
+              16384
+            ],
+            "deep": true
+          },
+          {
+            "label": "DS ARM9 BIOS (bios9.bin)",
+            "required": false,
+            "namePattern": "^bios9\\.bin$",
+            "sizes": [
+              4096
+            ],
+            "deep": true
+          },
+          {
+            "label": "DS firmware (firmware.bin)",
+            "required": false,
+            "namePattern": "^firmware\\.bin$",
+            "sizes": [
+              131072,
+              262144,
+              524288
+            ],
+            "deep": true,
+            "note": "Set the paths in melonDS under Config, Emu settings, DS-mode."
+          }
+        ]
+      },
+      "backup": [
+        "melonDS.toml"
+      ]
+    },
+    {
+      "id": "3ds",
+      "name": "Nintendo 3DS",
+      "emulator": "Azahar",
+      "source": {
+        "type": "github",
+        "repo": "azahar-emu/azahar",
+        "assetPattern": "azahar-windows-msvc-[\\d.]+\\.zip$"
+      },
+      "exts": [
+        "3ds",
+        "cci",
+        "cxi"
+      ],
+      "artRepos": [
+        "Nintendo_-_Nintendo_3DS"
+      ],
+      "exePattern": "^azahar(-qt)?\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "portableMarker": "user/",
+      "setup": {
+        "folder": "user",
+        "intro": "Most 3DS games run without extra files.",
+        "items": [
+          {
+            "label": "Encrypted-game keys (aes_keys.txt)",
+            "required": false,
+            "namePattern": "^aes_keys\\.txt$",
+            "deep": true,
+            "note": "Optional. Only for games that are still encrypted. Put it in the sysdata folder."
+          }
+        ]
+      },
+      "backup": [
+        "user/sdmc",
+        "user/states",
+        "user/config"
+      ]
+    },
+    {
+      "id": "gc",
+      "name": "GameCube",
+      "emulator": "Dolphin",
+      "source": {
+        "type": "page",
+        "url": "https://dolphin-emu.org/download/",
+        "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z",
+        "fallbackUrl": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z"
+      },
+      "exts": [
+        "iso",
+        "gcm",
+        "rvz",
+        "gcz"
+      ],
+      "exePattern": "^dolphin\\.exe$",
+      "portableMarker": "portable.txt",
+      "launchArgs": [
+        "-b",
+        "-e",
+        "{rom}"
+      ],
+      "artRepos": [
+        "Nintendo_-_GameCube"
+      ],
+      "setup": {
+        "folder": "User/GC",
+        "intro": "GameCube games run without any extra files.",
+        "items": [
+          {
+            "label": "GameCube BIOS (IPL.bin)",
+            "required": false,
+            "namePattern": "^IPL\\.bin$",
+            "deep": true,
+            "note": "Optional. Only needed to see the GameCube boot logo. Put it in a USA, EUR or JAP folder inside this one."
+          }
+        ]
+      },
+      "backup": [
+        "User/GC",
+        "User/Wii",
+        "User/StateSaves",
+        "User/Config"
+      ]
+    },
+    {
+      "id": "wii",
+      "name": "Wii",
+      "emulator": "Dolphin",
+      "source": {
+        "type": "page",
+        "url": "https://dolphin-emu.org/download/",
+        "assetPattern": "https://dl\\.dolphin-emu\\.org/releases/[^\"'\\s<>]+?-x64\\.7z",
+        "fallbackUrl": "https://dl.dolphin-emu.org/releases/2609b/dolphin-2609b-x64.7z"
+      },
+      "exts": [
+        "iso",
+        "wbfs",
+        "rvz",
+        "wad"
+      ],
+      "exePattern": "^dolphin\\.exe$",
+      "portableMarker": "portable.txt",
+      "launchArgs": [
+        "-b",
+        "-e",
+        "{rom}"
+      ],
+      "artRepos": [
+        "Nintendo_-_Wii"
+      ],
+      "setup": {
+        "folder": "User",
+        "intro": "Wii games run without extra files.",
+        "items": []
+      },
+      "backup": [
+        "User/GC",
+        "User/Wii",
+        "User/StateSaves",
+        "User/Config"
+      ]
+    },
+    {
+      "id": "wiiu",
+      "name": "Wii U",
+      "emulator": "Cemu",
+      "source": {
+        "type": "github",
+        "repo": "cemu-project/Cemu",
+        "assetPattern": "windows-x64\\.zip$"
+      },
+      "exts": [
+        "wud",
+        "wux",
+        "wua",
+        "rpx"
+      ],
+      "artRepos": [
+        "Nintendo_-_Wii_U"
+      ],
+      "exePattern": "^Cemu\\.exe$",
+      "launchArgs": [
+        "-g",
+        "{rom}"
+      ],
+      "portableMarker": "portable/",
+      "setup": {
+        "folder": ".",
+        "intro": "Cemu needs the Wii U keys file to open encrypted game dumps. Decrypted dumps don't need it.",
+        "items": [
+          {
+            "label": "Wii U keys (keys.txt)",
+            "required": false,
+            "namePattern": "^keys\\.txt$",
+            "deep": true,
+            "note": "Optional if your games are decrypted. Use keys from your own console. Put it next to Cemu.exe."
+          }
+        ]
+      },
+      "backup": [
+        "mlc01/usr/save",
+        "settings.xml"
+      ]
+    },
+    {
+      "id": "switch",
+      "name": "Nintendo Switch",
+      "emulator": "Eden",
+      "source": {
+        "type": "forgejo",
+        "host": "git.eden-emu.dev",
+        "repo": "eden-emu/eden",
+        "assetPattern": "^Eden-Windows-.*-amd64-msvc-standard\\.zip$"
+      },
+      "exts": [
+        "nsp",
+        "xci"
+      ],
+      "exePattern": "^eden\\.exe$",
+      "portableMarker": "user/",
+      "launchArgs": [
+        "-g",
+        "{rom}"
+      ],
+      "warning": "Needs prod.keys and firmware dumped from your own Switch. Trayload never provides or links them. Eden is downloaded from its official release server (git.eden-emu.dev, with files from stable.eden-emu.dev).",
+      "setup": {
+        "folder": "user",
+        "intro": "Eden needs prod.keys, and many games also need firmware, both from your own Switch. Trayload doesn't provide or link them.",
+        "items": [
+          {
+            "label": "Switch keys (prod.keys)",
+            "required": true,
+            "namePattern": "^prod\\.keys$",
+            "deep": true,
+            "note": "Goes in the keys folder inside this one."
+          },
+          {
+            "label": "Switch firmware",
+            "required": false,
+            "namePattern": "\\.nca$",
+            "deep": true,
+            "note": "Needed by many games. Install it from inside Eden (Tools, then Install Firmware)."
+          }
+        ]
+      },
+      "backup": [
+        "user/nand/user/save",
+        "user/config"
+      ]
+    },
+    {
+      "id": "ps1",
+      "name": "PlayStation",
+      "emulator": "DuckStation",
+      "source": {
+        "type": "github",
+        "repo": "stenzek/duckstation",
+        "assetPattern": "windows-x64.*\\.zip$"
+      },
+      "exts": [
+        "bin",
+        "cue",
+        "chd",
+        "pbp"
+      ],
+      "exePattern": "^duckstation-qt.*\\.exe$",
+      "portableMarker": "portable.txt",
+      "launchArgs": [
+        "-batch",
+        "--",
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sony_-_PlayStation"
+      ],
+      "setup": {
+        "folder": "bios",
+        "intro": "DuckStation needs a PlayStation BIOS file from your own console. One file is enough.",
+        "items": [
+          {
+            "label": "PlayStation BIOS",
+            "required": true,
+            "sizes": [
+              524288
+            ],
+            "note": "A 512 KB .bin file (for example scph5501.bin). Pick one that matches your games' region."
+          }
+        ]
+      },
+      "backup": [
+        "memcards",
+        "savestates",
+        "settings.ini"
+      ]
+    },
+    {
+      "id": "ps2",
+      "name": "PlayStation 2",
+      "emulator": "PCSX2",
+      "source": {
+        "type": "github",
+        "repo": "PCSX2/pcsx2",
+        "assetPattern": "windows-x64-Qt\\.7z$"
+      },
+      "exts": [
+        "iso",
+        "chd",
+        "cso"
+      ],
+      "artRepos": [
+        "Sony_-_PlayStation_2"
+      ],
+      "setup": {
+        "folder": "bios",
+        "intro": "PCSX2 needs a PlayStation 2 BIOS from your own console.",
+        "items": [
+          {
+            "label": "PlayStation 2 BIOS",
+            "required": true,
+            "sizes": [
+              4194304
+            ],
+            "note": "A 4 MB .bin file. Pick one that matches your games' region."
+          }
+        ]
+      },
+      "exePattern": "^pcsx2-qt\\.exe$",
+      "launchArgs": [
+        "-batch",
+        "--",
+        "{rom}"
+      ],
+      "portableMarker": "portable.txt",
+      "backup": [
+        "memcards",
+        "sstates",
+        "inis"
+      ]
+    },
+    {
+      "id": "ps3",
+      "name": "PlayStation 3",
+      "emulator": "RPCS3",
+      "source": {
+        "type": "github",
+        "repo": "RPCS3/rpcs3-binaries-win",
+        "assetPattern": "win64_msvc\\.7z$",
+        "versionRegex": "rpcs3-(v[\\d.]+-\\d+)"
+      },
+      "exts": [
+        "iso",
+        "pkg"
+      ],
+      "artRepos": [
+        "Sony_-_PlayStation_3"
+      ],
+      "exePattern": "^rpcs3\\.exe$",
+      "launchArgs": [
+        "--no-gui",
+        "{rom}"
+      ],
+      "setup": {
+        "folder": "dev_flash",
+        "intro": "RPCS3 needs the PS3 system software from your own console, installed from RPCS3 under File, Install Firmware.",
+        "items": [
+          {
+            "label": "PS3 system software (installed)",
+            "required": true,
+            "namePattern": "^liblv2\\.sprx$",
+            "deep": true,
+            "note": "Found after the firmware is installed. This check is a best guess."
+          }
+        ]
+      },
+      "backup": [
+        "dev_hdd0/home",
+        "savestates",
+        "config"
+      ]
+    },
+    {
+      "id": "psp",
+      "name": "PSP",
+      "emulator": "PPSSPP",
+      "source": {
+        "type": "page",
+        "url": "https://www.ppsspp.org/download/",
+        "assetPattern": "(?:https://www\\.ppsspp\\.org)?/files/[\\w.]+/ppsspp_win\\.zip",
+        "fallbackUrl": "https://www.ppsspp.org/files/1_20_4/ppsspp_win.zip"
+      },
+      "exts": [
+        "iso",
+        "cso",
+        "pbp"
+      ],
+      "artRepos": [
+        "Sony_-_PlayStation_Portable"
+      ],
+      "exePattern": "^PPSSPPWindows64\\.exe$",
+      "portableMarker": "memstick/",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "PSP games run without extra files.",
+        "items": []
+      },
+      "backup": [
+        "memstick/PSP/SAVEDATA",
+        "memstick/PSP/PPSSPP_STATE",
+        "memstick/PSP/SYSTEM"
+      ]
+    },
+    {
+      "id": "vita",
+      "name": "PS Vita",
+      "emulator": "Vita3K",
+      "source": {
+        "type": "github",
+        "repo": "Vita3K/Vita3K",
+        "assetPattern": "^windows-latest\\.zip$"
+      },
+      "exts": [
+        "vpk"
+      ],
+      "artRepos": [
+        "Sony_-_PlayStation_Vita"
+      ],
+      "exePattern": "^Vita3K\\.exe$",
+      "setup": {
+        "folder": ".",
+        "intro": "Vita3K needs the PS Vita firmware and font package from your own console, installed from Vita3K under File. Install each game once in Vita3K (File, Install .vpk). After that, Play starts it by its Title ID.",
+        "items": [
+          {
+            "label": "PS Vita firmware (installed)",
+            "required": false,
+            "namePattern": "^libSceLibc\\.suprx$",
+            "deep": true,
+            "note": "Found after the firmware is installed. This check is a best guess, so it never blocks anything."
+          }
+        ]
+      },
+      "launchArgs": [
+        "-r",
+        "{titleid}"
+      ],
+      "backup": [
+        "ux0/user",
+        "config.yml"
+      ]
+    },
+    {
+      "id": "dc",
+      "name": "Dreamcast",
+      "emulator": "Flycast",
+      "source": {
+        "type": "github",
+        "repo": "flyinghead/flycast",
+        "assetPattern": "flycast-win64-.*\\.zip$"
+      },
+      "exts": [
+        "gdi",
+        "cdi",
+        "chd"
+      ],
+      "artRepos": [
+        "Sega_-_Dreamcast"
+      ],
+      "setup": {
+        "folder": "data",
+        "intro": "Flycast has a built-in replacement BIOS, so these files are optional. Real ones can improve compatibility.",
+        "items": [
+          {
+            "label": "Dreamcast boot ROM (dc_boot.bin)",
+            "required": false,
+            "namePattern": "^dc_boot\\.bin$",
+            "sizes": [
+              2097152
+            ]
+          },
+          {
+            "label": "Dreamcast flash (dc_flash.bin)",
+            "required": false,
+            "namePattern": "^dc_flash\\.bin$",
+            "sizes": [
+              131072
+            ]
+          }
+        ]
+      },
+      "exePattern": "^flycast\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "portableMarker": "data/",
+      "backup": [
+        "data"
+      ]
+    },
+    {
+      "id": "xbox",
+      "name": "Original Xbox",
+      "emulator": "xemu",
+      "source": {
+        "type": "github",
+        "repo": "xemu-project/xemu",
+        "assetPattern": "^xemu-win-x86_64-release\\.zip$"
+      },
+      "exts": [
+        "iso"
+      ],
+      "artRepos": [
+        "Microsoft_-_Xbox"
+      ],
+      "exePattern": "^xemu\\.exe$",
+      "launchArgs": [
+        "-dvd_path",
+        "{rom}"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "xemu needs three files from your own original Xbox: the boot ROM, the BIOS and a hard drive image. Set their paths in xemu under System.",
+        "items": [
+          {
+            "label": "MCPX boot ROM",
+            "required": true,
+            "namePattern": "^mcpx.*\\.bin$",
+            "sizes": [
+              512
+            ],
+            "deep": true
+          },
+          {
+            "label": "Xbox BIOS (flash ROM)",
+            "required": true,
+            "namePattern": "\\.bin$",
+            "sizes": [
+              262144,
+              524288,
+              1048576
+            ],
+            "deep": true
+          },
+          {
+            "label": "Hard drive image",
+            "required": true,
+            "namePattern": "\\.qcow2$",
+            "deep": true
+          }
+        ]
+      },
+      "backup": [
+        "xemu.toml"
+      ]
+    },
+    {
+      "id": "x360",
+      "name": "Xbox 360",
+      "emulator": "Xenia Canary",
+      "source": {
+        "type": "github",
+        "repo": "xenia-canary/xenia-canary-releases",
+        "assetPattern": "windows.*\\.zip$"
+      },
+      "exts": [
+        "iso",
+        "xex"
+      ],
+      "artRepos": [
+        "Microsoft_-_Xbox_360"
+      ],
+      "exePattern": "^xenia_canary\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "portableMarker": "portable.txt",
+      "setup": {
+        "folder": ".",
+        "intro": "Xenia Canary runs without BIOS or firmware files.",
+        "items": []
+      },
+      "backup": [
+        "content",
+        "xenia-canary.config.toml"
+      ]
+    },
+    {
+      "id": "sms",
+      "name": "Master System",
+      "emulator": "ares",
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assetPattern": "windows.*(x64|x86_64|amd64)\\.zip$"
+      },
+      "exts": [
+        "sms"
+      ],
+      "exePattern": "^ares\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_Master_System_-_Mark_III"
+      ],
+      "aliases": [
+        "mastersystem",
+        "sega master"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "ares runs these games without extra files.",
+        "items": []
+      },
+      "backup": [],
+      "warning": "ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases."
+    },
+    {
+      "id": "gg",
+      "name": "Game Gear",
+      "emulator": "ares",
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assetPattern": "windows.*(x64|x86_64|amd64)\\.zip$"
+      },
+      "exts": [
+        "gg"
+      ],
+      "exePattern": "^ares\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_Game_Gear"
+      ],
+      "aliases": [
+        "gamegear"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "ares runs these games without extra files.",
+        "items": []
+      },
+      "backup": [],
+      "warning": "ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases."
+    },
+    {
+      "id": "sg1000",
+      "name": "SG-1000",
+      "emulator": "ares",
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assetPattern": "windows.*(x64|x86_64|amd64)\\.zip$"
+      },
+      "exts": [
+        "sg"
+      ],
+      "exePattern": "^ares\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_SG-1000"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "ares runs these games without extra files.",
+        "items": []
+      },
+      "backup": [],
+      "warning": "ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases."
+    },
+    {
+      "id": "genesis",
+      "name": "Sega Genesis / Mega Drive",
+      "emulator": "ares",
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assetPattern": "windows.*(x64|x86_64|amd64)\\.zip$"
+      },
+      "exts": [
+        "md",
+        "gen",
+        "smd",
+        "bin"
+      ],
+      "exePattern": "^ares\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_Mega_Drive_-_Genesis"
+      ],
+      "aliases": [
+        "megadrive",
+        "genesis",
+        "sega md"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "ares runs these games without extra files.",
+        "items": []
+      },
+      "backup": [],
+      "warning": "ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases."
+    },
+    {
+      "id": "segacd",
+      "name": "Sega CD",
+      "emulator": "ares",
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assetPattern": "windows.*(x64|x86_64|amd64)\\.zip$"
+      },
+      "exts": [
+        "cue",
+        "chd",
+        "iso"
+      ],
+      "exePattern": "^ares\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_Mega-CD_-_Sega_CD"
+      ],
+      "aliases": [
+        "megacd",
+        "sega cd"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "Mega CD games need a Mega CD BIOS from your own console. ares asks for it the first time you start a Sega CD game, so there is nothing to place here yourself.",
+        "items": []
+      },
+      "backup": [],
+      "warning": "ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases."
+    },
+    {
+      "id": "s32x",
+      "name": "Sega 32X",
+      "emulator": "ares",
+      "source": {
+        "type": "github",
+        "repo": "ares-emulator/ares",
+        "assetPattern": "windows.*(x64|x86_64|amd64)\\.zip$"
+      },
+      "exts": [
+        "32x"
+      ],
+      "exePattern": "^ares\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_32X"
+      ],
+      "aliases": [
+        "32x"
+      ],
+      "setup": {
+        "folder": ".",
+        "intro": "ares runs these games without extra files.",
+        "items": []
+      },
+      "backup": [],
+      "warning": "ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases."
+    },
+    {
+      "id": "saturn",
+      "name": "Sega Saturn",
+      "emulator": "Ymir",
+      "source": {
+        "type": "github",
+        "repo": "ymir-emu/Ymir",
+        "assetPattern": "windows.*x86_64.*avx2.*\\.zip$"
+      },
+      "exts": [
+        "cue",
+        "chd",
+        "ccd",
+        "mds"
+      ],
+      "exePattern": "^ymir.*\\.exe$",
+      "launchArgs": [
+        "{rom}"
+      ],
+      "artRepos": [
+        "Sega_-_Saturn"
+      ],
+      "aliases": [
+        "saturn"
+      ],
+      "setup": {
+        "folder": "roms/ipl",
+        "intro": "Saturn games need a Saturn BIOS (IPL ROM) from your own console. Put it in the folder below.",
+        "items": [
+          {
+            "label": "Saturn BIOS (IPL ROM)",
+            "required": true,
+            "sizes": [
+              524288
+            ],
+            "note": "Any one 512 KB Saturn BIOS file. Use the region that matches your games."
+          }
+        ]
+      },
+      "backup": []
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade",
+      "emulator": "MAME",
+      "source": {
+        "type": "github",
+        "repo": "mamedev/mame",
+        "assetPattern": "mame.*64bit.*\\.exe$"
+      },
+      "exts": [
+        "zip"
+      ],
+      "artRepos": [
+        "MAME"
+      ],
+      "setup": {
+        "folder": "roms",
+        "intro": "MAME needs a ROM set (a .zip per game) that matches its version. Trayload doesn't provide or link them.",
+        "items": [
+          {
+            "label": "Arcade ROM sets (.zip files)",
+            "required": false,
+            "namePattern": "\\.zip$",
+            "deep": true,
+            "note": "Optional here. Put them in the roms folder."
+          }
+        ]
+      }
+    }
+  ],
+  "pending": "Still to add: Switch 2 via Lichii (on hold until games can be started from Trayload), then MAME and FinalBurn Neo (arcade and Neo Geo, which need ROM-set handling). PS5 is watch-only: follow it in the News tab, no install entry. Systems RetroArch used to cover (Atari, PC Engine and others) are left to community addons.",
+  "retired": [
+    {
+      "id": "pce",
+      "name": "PC Engine / TurboGrafx-16"
+    },
+    {
+      "id": "a2600",
+      "name": "Atari 2600"
+    },
+    {
+      "id": "a5200",
+      "name": "Atari 5200"
+    },
+    {
+      "id": "a7800",
+      "name": "Atari 7800"
+    },
+    {
+      "id": "lynx",
+      "name": "Atari Lynx"
+    },
+    {
+      "id": "jaguar",
+      "name": "Atari Jaguar"
+    },
+    {
+      "id": "ngp",
+      "name": "Neo Geo Pocket"
+    },
+    {
+      "id": "wswan",
+      "name": "WonderSwan"
+    },
+    {
+      "id": "vb",
+      "name": "Virtual Boy"
+    },
+    {
+      "id": "pokemini",
+      "name": "Pokemon Mini"
+    },
+    {
+      "id": "coleco",
+      "name": "ColecoVision"
+    },
+    {
+      "id": "intv",
+      "name": "Intellivision"
+    },
+    {
+      "id": "vectrex",
+      "name": "Vectrex"
+    },
+    {
+      "id": "msx",
+      "name": "MSX"
+    },
+    {
+      "id": "3do",
+      "name": "3DO"
+    },
+    {
+      "id": "pcfx",
+      "name": "PC-FX"
+    }
+  ]
 }

@@ -110,7 +110,15 @@ pub fn play_game(
     }
 
     let reg = registry::load(&app)?;
-    let sys = reg.systems.iter().find(|s| s.id == system_id).ok_or("Unknown system.")?;
+    let Some(sys) = reg.systems.iter().find(|s| s.id == system_id) else {
+        return Err(match reg.retired.iter().find(|r| r.id == system_id) {
+            Some(r) => format!(
+                "Trayload no longer has an emulator for {}. The game stays in your library, and a community addon can add one later.",
+                r.name
+            ),
+            None => "Unknown system.".to_string(),
+        });
+    };
     let template = sys
         .launch_args
         .clone()

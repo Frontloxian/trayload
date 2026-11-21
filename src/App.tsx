@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { AppInfo, Registry, ScanSummary, UpdateInfo } from "./types";
+import type { AppInfo, LegacyStatus, Registry, ScanSummary, System, UpdateInfo } from "./types";
+import CopyStatus from "./CopyStatus";
+import LegacyCleanup from "./LegacyCleanup";
 import Emulators from "./Emulators";
 import ErrorBoundary from "./ErrorBoundary";
 import Home from "./Home";
@@ -55,6 +57,30 @@ export default function App() {
   const [help, setHelp] = useState(false);
   const [quick, setQuick] = useState(false);
   const [scan, setScan] = useState<ScanSummary | null>(null);
+  const [legacy, setLegacy] = useState<LegacyStatus | null>(null);
+
+  // Retired systems keep their names so games already in the library still read properly.
+  const allSystems = useMemo<System[]>(() => {
+    const active = registry?.systems ?? [];
+    const retired = (registry?.retired ?? []).map(
+      (r): System => ({ id: r.id, name: r.name, emulator: "", source: { type: "direct", url: "" }, exts: [] }),
+    );
+    return [...active, ...retired];
+  }, [registry]);
+
+  // Offer once (per launch until dismissed) to clean up the RetroArch folder older versions made.
+  useEffect(() => {
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem("trayload.legacyDismissed") === "1";
+    } catch {
+      /* ignore */
+    }
+    if (dismissed) return;
+    invoke<LegacyStatus>("legacy_status")
+      .then((s) => s.present && setLegacy(s))
+      .catch(() => {});
+  }, []);
 
   // After an update, show what's new once. A fresh install sees the welcome dialog instead.
   useEffect(() => {
@@ -272,7 +298,7 @@ export default function App() {
         <ErrorBoundary resetKey={page}>
         {page === "home" ? (
           <Home
-            systems={registry?.systems ?? []}
+            systems={allSystems}
             updates={updates}
             onOpenGame={(id) => {
               setPage("library");
@@ -288,7 +314,7 @@ export default function App() {
             {detailId !== null && (
               <GameDetail
                 id={detailId}
-                systems={registry?.systems ?? []}
+                systems={allSystems}
                 onBack={() => {
                   setDetailId(null);
                   setLibKey((k) => k + 1);
@@ -296,7 +322,7 @@ export default function App() {
               />
             )}
             <div hidden={detailId !== null}>
-              <Library systems={registry?.systems ?? []} refreshKey={libKey} onOpen={setDetailId} />
+              <Library systems={allSystems} refreshKey={libKey} onOpen={setDetailId} />
             </div>
           </>
         ) : page === "setup" ? (
@@ -328,6 +354,38 @@ export default function App() {
           </div>
         </Dialog>
       )}
+      {legacy && (
+        <Dialog
+          title="RetroArch is no longer used"
+          onClose={() => {
+            try {
+              localStorage.setItem("trayload.legacyDismissed", "1");
+            } catch {
+              /* ignore */
+            }
+            setLegacy(null);
+          }}
+          wide
+        >
+          <LegacyCleanup status={legacy} onChanged={() => setLegacy(null)} />
+          <div className="row">
+            <button
+              className="btn"
+              onClick={() => {
+                try {
+                  localStorage.setItem("trayload.legacyDismissed", "1");
+                } catch {
+                  /* ignore */
+                }
+                setLegacy(null);
+              }}
+            >
+              Decide later (also in Settings)
+            </button>
+          </div>
+        </Dialog>
+      )}
+      <CopyStatus />
       {help && <ShortcutHelp onClose={() => setHelp(false)} />}
       {quick && (
         <QuickSettings music={music} onClose={() => setQuick(false)} onGo={setPage} onRescan={rescan} onHelp={() => setHelp(true)} />

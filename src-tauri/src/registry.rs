@@ -32,9 +32,6 @@ pub enum Source {
     },
     /// A fixed official download address. The version is read from the server's Last-Modified date.
     Direct { url: String },
-    /// A libretro core (one .dll) from the official libretro build server. Runs inside the shared
-    /// RetroArch install, which is downloaded automatically the first time.
-    Core { core: String },
     /// Vendor download page (resolved later by the installer).
     Page {
         url: String,
@@ -114,9 +111,18 @@ pub struct System {
     pub warning: Option<String>,
 }
 
+/// A system Trayload no longer has an emulator for. Games already in the library keep their name.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Retired {
+    pub id: String,
+    pub name: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Registry {
     pub systems: Vec<System>,
+    #[serde(default)]
+    pub retired: Vec<Retired>,
 }
 
 fn parse(text: &str) -> Result<Registry, String> {
@@ -129,7 +135,11 @@ pub fn load(app: &AppHandle) -> Result<Registry, String> {
         if path.exists() {
             let text = fs::read_to_string(&path)
                 .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-            return parse(&text);
+            match parse(&text) {
+                Ok(r) => return Ok(r),
+                // An old registry.json (from before a Trayload update) must not break the app.
+                Err(e) => crate::applog!("[registry] ignoring {}: {e}", path.display()),
+            }
         }
     }
     parse(EMBEDDED)
@@ -171,9 +181,6 @@ mod tests {
                 Source::Forgejo { asset_pattern, .. } => {
                     assert!(Regex::new(asset_pattern).is_ok(), "bad assetPattern for {}", s.id);
                 }
-                Source::Core { core } => {
-                    assert!(Regex::new("^[a-z0-9_]+$").unwrap().is_match(core), "bad core name for {}", s.id);
-                }
                 _ => {}
             }
             if let Some(a) = &s.launch_args {
@@ -206,6 +213,25 @@ mod tests {
             if let Some(prev) = seen.insert(key.clone(), sig.clone()) {
                 assert_eq!(prev, sig, "systems sharing {key} must have the same source, exePattern and marker");
             }
+        }
+    }
+
+    #[test]
+    fn retired_systems_are_not_active() {
+        let r = parse(EMBEDDED).unwrap();
+        assert!(!r.retired.is_empty());
+        for t in &r.retired {
+            assert!(!r.systems.iter().any(|s| s.id == t.id), "{} is both active and retired", t.id);
+        }
+    }
+
+    #[test]
+    fn no_system_uses_retroarch() {
+        let r = parse(EMBEDDED).unwrap();
+        for s in &r.systems {
+            assert_ne!(s.tier.as_deref(), Some("core"), "{} still uses a core", s.id);
+            assert!(!s.exe_pattern.clone().unwrap_or_default().to_lowercase().contains("retroarch"));
+            assert!(!s.launch_args.clone().unwrap_or_default().iter().any(|a| a == "-L"));
         }
     }
 

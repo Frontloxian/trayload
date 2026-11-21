@@ -61,7 +61,7 @@ fn now() -> u64 {
 }
 
 /// Installed emulators that declare backup paths, merged by the folder they live in
-/// (all RetroArch cores share one folder, for example).
+/// (all systems that share one emulator, for example).
 fn sources(app: &AppHandle) -> Result<Vec<Source>, String> {
     let reg = registry::load(app)?;
     let root = installer::emulators_dir(app)?;
@@ -80,7 +80,7 @@ fn sources(app: &AppHandle) -> Result<Vec<Source>, String> {
             .strip_prefix(&canon_root)
             .map(|p| p.to_string_lossy().replace(['\\', '/'], "~"))
             .unwrap_or(id.clone());
-        let name = if s.tier.as_deref() == Some("core") { "RetroArch".to_string() } else { s.emulator.clone() };
+        let name = s.emulator.clone();
         let e = map.entry(key.clone()).or_insert(Source { key, name, base, rels: vec![] });
         for r in &s.backup {
             if safe_rel(r) && !e.rels.contains(r) {

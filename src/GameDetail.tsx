@@ -109,7 +109,7 @@ export default function GameDetail({ id, systems, onBack }: Props) {
             <h2>{game.title}</h2>
             <div className="muted">
               {system?.name ?? game.systemId}
-              {system && ` · plays in ${system.emulator}`}
+              {system?.emulator ? ` · plays in ${system.emulator}` : system ? " · no emulator installed" : ""}
             </div>
             <div className="row">
               <button className="btn primary big" disabled={running || game.missing} onClick={() => act(() => invoke("play_game", { id }))}>

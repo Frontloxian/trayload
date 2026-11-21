@@ -262,7 +262,7 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
       {review && (
         <ul className="cards">
           {unassigned.map((u) => {
-            const options = u.candidates.length ? u.candidates : systems.map((s) => s.id);
+            const options = u.candidates.length ? u.candidates : systems.filter((s) => s.exts.length > 0).map((s) => s.id);
             const value = choice[u.path] ?? options[0];
             return (
               <li key={u.path} className="card">
@@ -305,8 +305,8 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
         <div className="empty">
           <h2>Your library is empty</h2>
           <p className="muted">
-            Drag game files or folders anywhere onto this window, or use Add games / Add folder above. Trayload only
-            remembers where your files are. It never copies or changes them.
+            Drag game files or folders anywhere onto this window, or use Add games above. Trayload copies them into your
+            games folder, one folder per console. Use Add folder to scan a folder where it is, without copying.
           </p>
         </div>
       ) : (

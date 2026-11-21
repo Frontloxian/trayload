@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import BackupPanel from "./BackupPanel";
-import type { AppInfo, ArtSettings, RemovedGame } from "./types";
+import LegacyCleanup from "./LegacyCleanup";
+import { Dialog } from "./Overlays";
+import type { AppInfo, ArtSettings, DeleteSummary, GamesFolder, LegacyStatus, RemovedGame } from "./types";
 import type { Music } from "./useMusic";
 import type { AppUpdate } from "./useAppUpdate";
 
@@ -12,6 +14,11 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
   const [folders, setFolders] = useState<string[]>([]);
   const [removed, setRemoved] = useState<RemovedGame[]>([]);
   const [info, setInfo] = useState<AppInfo | null>(null);
+  const [gamesFolder, setGamesFolder] = useState<GamesFolder | null>(null);
+  const [ignored, setIgnored] = useState<string[]>([]);
+  const [legacy, setLegacy] = useState<LegacyStatus | null>(null);
+  // Permanent delete asks first: one game (its id), everything removed ("all"), or nothing (null).
+  const [confirmDelete, setConfirmDelete] = useState<RemovedGame | "all" | null>(null);
   const [auto, setAuto] = useState(() => {
     try {
       return localStorage.getItem("trayload.autoUpdate") === "1";
@@ -27,7 +34,40 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     invoke<string[]>("get_rom_folders").then(setFolders);
     invoke<RemovedGame[]>("list_removed_games").then(setRemoved).catch(() => {});
     invoke<AppInfo>("get_app_info").then(setInfo).catch(() => {});
+    invoke<GamesFolder>("get_games_folder").then(setGamesFolder).catch(() => {});
+    invoke<string[]>("list_ignored_files").then(setIgnored).catch(() => {});
+    invoke<LegacyStatus>("legacy_status").then(setLegacy).catch(() => {});
   }, []);
+
+  async function pickGamesFolder() {
+    const dir = await open({ directory: true, title: "Choose the games folder" });
+    if (typeof dir === "string") {
+      await act(async () => {
+        await invoke("set_games_folder", { path: dir });
+        await invoke("rescan");
+      }, "Games folder changed. Games in the old folder stay in your library.");
+    }
+  }
+
+  async function deletePermanently(target: RemovedGame | "all") {
+    setConfirmDelete(null);
+    setError(null);
+    setMsg("");
+    try {
+      const r =
+        target === "all"
+          ? await invoke<DeleteSummary>("delete_all_removed")
+          : await invoke<DeleteSummary>("delete_removed_game", { id: target.id });
+      const bits = [`Deleted ${r.deleted} game${r.deleted === 1 ? "" : "s"} from Trayload.`];
+      if (r.recycled) bits.push(`${r.recycled} file${r.recycled === 1 ? "" : "s"} moved to the Recycle Bin.`);
+      if (r.leftAlone) bits.push(`${r.leftAlone} file${r.leftAlone === 1 ? " was" : "s were"} outside Trayload's folder and left alone.`);
+      setMsg(bits.join(" "));
+      if (r.failed.length) setError(r.failed.join(" "));
+    } catch (e) {
+      setError(String(e));
+    }
+    load();
+  }
 
   useEffect(load, [load]);
 
@@ -189,10 +229,33 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
       </section>
 
       <section className="section">
-        <h2>ROM folders</h2>
+        <h2>Games folder</h2>
         <p className="muted">
-          These folders are scanned every time Trayload starts. Add folders from the Library tab. Removing one here
-          doesn't delete anything and keeps the games already in your library.
+          Games you drag onto Trayload are copied into this folder, in one folder per console (for example Nintendo
+          64). Your originals are never changed. The folder is scanned automatically.
+        </p>
+        {gamesFolder && (
+          <div className="folder">
+            <code>{gamesFolder.path}</code>
+            {gamesFolder.isDefault && <span className="muted small">Default</span>}
+          </div>
+        )}
+        <div className="row wrap">
+          <button className="btn" onClick={() => void pickGamesFolder()}>
+            Change folder…
+          </button>
+          <button className="btn" onClick={() => act(() => invoke("open_games_folder"), "Opened the games folder.")}>
+            Open games folder
+          </button>
+        </div>
+      </section>
+
+      <section className="section">
+        <h2>Scanned folders</h2>
+        <p className="muted">
+          These folders are scanned every time Trayload starts, and their games stay where they are (nothing is copied).
+          Add folders from the Library tab. Removing one here doesn't delete anything and keeps the games already in your
+          library.
         </p>
         {folders.length === 0 ? (
           <p className="muted">No folders yet.</p>
@@ -275,9 +338,18 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
       <section className="section">
         <h2>Removed games</h2>
         <p className="muted">
-          Games you removed from the library stay out of it, even when a folder is scanned again. Their files are never
-          deleted. Restore one to bring it back.
+          Games you removed from the library stay out of it, even when a folder is scanned again. Restore one to bring
+          it back. Delete permanently removes every trace of a game from Trayload (its cover, play time, favorite and
+          collections too). Files in Trayload's games folder go to the Recycle Bin. Files anywhere else are never
+          touched.
         </p>
+        {removed.length > 1 && (
+          <div className="row">
+            <button className="btn danger" onClick={() => setConfirmDelete("all")}>
+              Delete all permanently
+            </button>
+          </div>
+        )}
         {removed.length === 0 ? (
           <p className="muted">Nothing removed.</p>
         ) : (
@@ -286,13 +358,48 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
               <span>
                 {g.title} <span className="muted small">{g.path}</span>
               </span>
-              <button className="btn" onClick={() => act(() => invoke("restore_game", { id: g.id }), "Game restored.")}>
-                Restore
-              </button>
+              <span className="row">
+                <button className="btn" onClick={() => act(() => invoke("restore_game", { id: g.id }), "Game restored.")}>
+                  Restore
+                </button>
+                <button className="btn danger" onClick={() => setConfirmDelete(g)}>
+                  Delete permanently
+                </button>
+              </span>
             </div>
           ))
         )}
       </section>
+
+      {ignored.length > 0 && (
+        <section className="section">
+          <h2>Ignored files</h2>
+          <p className="muted">
+            These files were deleted from Trayload but still sit in a folder it scans, so Trayload remembers only their
+            path to keep them from coming back. Clearing the list makes them show up again on the next scan.
+          </p>
+          {ignored.map((p) => (
+            <div key={p} className="folder">
+              <code>{p}</code>
+              <button className="btn" onClick={() => act(() => invoke("clear_ignored_files", { path: p }), "No longer ignored.")}>
+                Stop ignoring
+              </button>
+            </div>
+          ))}
+          <div className="row">
+            <button className="btn" onClick={() => act(() => invoke("clear_ignored_files", { path: null }), "Ignored list cleared.")}>
+              Clear the list
+            </button>
+          </div>
+        </section>
+      )}
+
+      {legacy?.present && (
+        <section className="section">
+          <h2>Old RetroArch folder</h2>
+          <LegacyCleanup status={legacy} onChanged={load} />
+        </section>
+      )}
 
       <BackupPanel />
 
@@ -309,6 +416,25 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         </div>
         {info && <div className="muted small folder-path">{info.dataFolder}</div>}
       </section>
+      {confirmDelete && (
+        <Dialog title="Delete permanently?" onClose={() => setConfirmDelete(null)}>
+          <p className="muted">
+            {confirmDelete === "all"
+              ? `This removes all ${removed.length} removed games from Trayload for good.`
+              : `This removes ${confirmDelete.title} from Trayload for good.`}{" "}
+            Their covers, play time, favorites and collection entries go too. Files in Trayload's games folder are moved
+            to the Recycle Bin. Files anywhere else are not touched.
+          </p>
+          <div className="row">
+            <button className="btn danger" onClick={() => void deletePermanently(confirmDelete)}>
+              Delete permanently
+            </button>
+            <button className="btn" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </button>
+          </div>
+        </Dialog>
+      )}
     </>
   );
 }

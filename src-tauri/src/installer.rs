@@ -28,13 +28,7 @@ const ALLOWED_HOSTS: &[&str] = &[
     "stable.eden-emu.dev",
     "ppsspp.org",
     "www.ppsspp.org",
-    "buildbot.libretro.com",
 ];
-
-/// The shared RetroArch frontend that libretro cores run in.
-const RETROARCH_URL: &str = "https://buildbot.libretro.com/nightly/windows/x86_64/RetroArch.7z";
-const RETROARCH_ID: &str = "retroarch";
-const CORE_URL: &str = "https://buildbot.libretro.com/nightly/windows/x86_64/latest";
 
 #[derive(Default)]
 pub struct Installing(pub Mutex<HashSet<String>>);
@@ -291,12 +285,6 @@ async fn resolve_direct(client: &reqwest::Client, url: &str) -> Result<Resolved,
 async fn resolve(client: &reqwest::Client, src: &Source) -> Result<Resolved, String> {
     match src {
         Source::Direct { url } => resolve_direct(client, url).await,
-        Source::Core { core } => {
-            if !core.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') || core.is_empty() {
-                return Err("bad core name in the registry".into());
-            }
-            resolve_direct(client, &format!("{CORE_URL}/{core}_libretro.dll.zip")).await
-        }
         Source::Github { repo, asset_pattern, version_regex } => {
             let re = RegexBuilder::new(asset_pattern)
                 .case_insensitive(true)
@@ -516,7 +504,7 @@ pub fn list_emulators(app: AppHandle) -> Result<Vec<EmulatorEntry>, String> {
             continue;
         }
         let source_ready = match &s.source {
-            Source::Github { .. } | Source::Forgejo { .. } | Source::Direct { .. } | Source::Core { .. } => true,
+            Source::Github { .. } | Source::Forgejo { .. } | Source::Direct { .. } => true,
             Source::Page { asset_pattern, .. } => asset_pattern.is_some(),
         };
         let installed = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d));
@@ -560,10 +548,6 @@ pub async fn check_updates(app: AppHandle) -> Result<Vec<UpdateInfo>, String> {
         let Some(inst) = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d)) else { continue };
         jobs.push((id, inst.version, s.source.clone()));
     }
-    // The shared RetroArch frontend updates on its own, apart from its cores.
-    if let Some(ra) = read_installed(&emulators_dir(&app)?.join(RETROARCH_ID)) {
-        jobs.push((RETROARCH_ID.to_string(), ra.version, Source::Direct { url: RETROARCH_URL.to_string() }));
-    }
     let results = futures_util::future::join_all(jobs.iter().map(|(_, _, src)| resolve(&client, src))).await;
     let mut out = vec![];
     for ((id, installed, _), r) in jobs.into_iter().zip(results) {
@@ -600,9 +584,6 @@ async fn do_install(app: &AppHandle, id: &str) -> Result<InstalledInfo, String> 
     if !valid_id(id) {
         return Err("invalid emulator id".into());
     }
-    if id == RETROARCH_ID {
-        return update_retroarch(app).await;
-    }
     let reg = registry::load(app)?;
     let sys = reg
         .systems
@@ -610,9 +591,6 @@ async fn do_install(app: &AppHandle, id: &str) -> Result<InstalledInfo, String> 
         .find(|s| slug(&s.emulator) == id)
         .ok_or("unknown emulator")?;
     let exe_pat = sys.exe_pattern.clone().ok_or("the registry has no exePattern for this emulator yet")?;
-    if let Source::Core { core } = &sys.source {
-        return install_core(app, id, core).await;
-    }
     install_package(app, id, id, &sys.source, &exe_pat, sys.portable_marker.clone()).await
 }
 
@@ -712,145 +690,6 @@ async fn install_package(
     Ok(info)
 }
 
-/// Folders in RetroArch that belong to you or to your cores. An update never touches them.
-const RA_KEEP: &[&str] = &["saves", "states", "system", "screenshots", "playlists", "thumbnails", "cores", "config", "logs", "retroarch.cfg"];
-
-fn copy_over(src_root: &Path, dir: &Path, dst_root: &Path) -> Result<(), String> {
-    for entry in fs::read_dir(dir).map_err(|e| e.to_string())?.flatten() {
-        let p = entry.path();
-        let rel = p.strip_prefix(src_root).map_err(|e| e.to_string())?;
-        let first = rel.components().next().map(|c| c.as_os_str().to_string_lossy().to_lowercase()).unwrap_or_default();
-        if RA_KEEP.contains(&first.as_str()) {
-            continue;
-        }
-        let dst = dst_root.join(rel);
-        if p.is_dir() {
-            fs::create_dir_all(&dst).map_err(|e| e.to_string())?;
-            copy_over(src_root, &p, dst_root)?;
-        } else {
-            fs::copy(&p, &dst).map_err(|e| format!("could not update {} (is RetroArch running?): {e}", rel.display()))?;
-        }
-    }
-    Ok(())
-}
-
-/// Updates RetroArch in place. Your cores, saves, states, BIOS files and settings stay where they are.
-async fn update_retroarch(app: &AppHandle) -> Result<InstalledInfo, String> {
-    let emu_root = emulators_dir(app)?;
-    let ra_dir = emu_root.join(RETROARCH_ID);
-    let old = read_installed(&ra_dir).ok_or("RetroArch is not installed")?;
-    let client = http_client()?;
-    progress(app, RETROARCH_ID, "resolving", 0, 0);
-    let r = resolve(&client, &Source::Direct { url: RETROARCH_URL.to_string() }).await?;
-    if r.version == old.version {
-        progress(app, RETROARCH_ID, "done", 0, 0);
-        return Ok(old);
-    }
-    let dl_dir = data_dir(app)?.join("downloads");
-    tokio::fs::create_dir_all(&dl_dir).await.map_err(|e| e.to_string())?;
-    let archive = dl_dir.join(&r.file_name);
-    download(app, &client, RETROARCH_ID, &r, &archive).await?;
-    progress(app, RETROARCH_ID, "extracting", 0, 0);
-    let staging = emu_root.join("retroarch.staging");
-    let version = r.version.clone();
-    let archive2 = archive.clone();
-    let info = tokio::task::spawn_blocking(move || -> Result<InstalledInfo, String> {
-        if staging.exists() {
-            fs::remove_dir_all(&staging).map_err(|e| e.to_string())?;
-        }
-        let result = (|| {
-            extract(&archive2, &staging)?;
-            verify_tree(&staging)?;
-            let root = content_root(&staging)?;
-            copy_over(&root, &root, &ra_dir)?;
-            let info = InstalledInfo {
-                version,
-                installed_at: SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
-                ..old
-            };
-            fs::write(ra_dir.join(".trayload.json"), serde_json::to_vec_pretty(&info).map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-            Ok(info)
-        })();
-        let _ = fs::remove_dir_all(&staging);
-        let _ = fs::remove_file(&archive2);
-        result
-    })
-    .await
-    .map_err(|e| e.to_string())??;
-    progress(app, RETROARCH_ID, "done", 0, 0);
-    Ok(info)
-}
-
-/// Installs a libretro core: the shared RetroArch first (once), then the core's .dll into its
-/// cores folder. The core's own folder only holds a small record that points at RetroArch.
-async fn install_core(app: &AppHandle, id: &str, core: &str) -> Result<InstalledInfo, String> {
-    let emu_root = emulators_dir(app)?;
-    let ra_dir = emu_root.join(RETROARCH_ID);
-    if read_installed(&ra_dir).is_none() {
-        install_package(
-            app,
-            RETROARCH_ID,
-            id,
-            &Source::Direct { url: RETROARCH_URL.to_string() },
-            "^retroarch\\.exe$",
-            None,
-        )
-        .await?;
-    }
-    let ra_info = read_installed(&ra_dir).ok_or("RetroArch did not install correctly")?;
-    let ra_exe = ra_dir.join(&ra_info.exe_rel_path);
-    let cores_dir = ra_exe.parent().ok_or("bad RetroArch folder")?.join("cores");
-
-    let client = http_client()?;
-    progress(app, id, "resolving", 0, 0);
-    let r = resolve(&client, &Source::Core { core: core.to_string() }).await?;
-    let dl_dir = data_dir(app)?.join("downloads");
-    tokio::fs::create_dir_all(&dl_dir).await.map_err(|e| e.to_string())?;
-    let archive = dl_dir.join(&r.file_name);
-    download(app, &client, id, &r, &archive).await?;
-
-    progress(app, id, "extracting", 0, 0);
-    let staging = emu_root.join(format!("{id}.staging"));
-    let dll_name = format!("{core}_libretro.dll");
-    let stub_dir = emu_root.join(id);
-    let (version, asset_name) = (r.version.clone(), r.file_name.clone());
-    let archive2 = archive.clone();
-    let info = tokio::task::spawn_blocking(move || -> Result<InstalledInfo, String> {
-        if staging.exists() {
-            fs::remove_dir_all(&staging).map_err(|e| e.to_string())?;
-        }
-        let result = (|| {
-            extract(&archive2, &staging)?;
-            verify_tree(&staging)?;
-            let dll = staging.join(&dll_name);
-            if !dll.is_file() {
-                return Err(format!("the download did not contain {dll_name}"));
-            }
-            fs::create_dir_all(&cores_dir).map_err(|e| e.to_string())?;
-            fs::copy(&dll, cores_dir.join(&dll_name))
-                .map_err(|e| format!("could not place the core (is RetroArch running?): {e}"))?;
-            fs::create_dir_all(&stub_dir).map_err(|e| e.to_string())?;
-            let info = InstalledInfo {
-                version,
-                asset_name,
-                installed_at: SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
-                exe_rel_path: format!("../{RETROARCH_ID}/{}", ra_info.exe_rel_path),
-            };
-            fs::write(stub_dir.join(".trayload.json"), serde_json::to_vec_pretty(&info).map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-            Ok(info)
-        })();
-        let _ = fs::remove_dir_all(&staging);
-        let _ = fs::remove_file(&archive2);
-        result
-    })
-    .await
-    .map_err(|e| e.to_string())??;
-    progress(app, id, "done", 0, 0);
-    Ok(info)
-}
-
 #[tauri::command]
 pub fn launch_emulator(app: AppHandle, id: String) -> Result<(), String> {
     let dir = emu_dir(&app, &id)?;
@@ -868,7 +707,7 @@ pub fn launch_emulator(app: AppHandle, id: String) -> Result<(), String> {
 }
 
 /// Removes a folder even if some files are read-only, retrying a few times for files that are briefly locked.
-fn remove_dir_robust(dir: &Path) -> Result<(), String> {
+pub(crate) fn remove_dir_robust(dir: &Path) -> Result<(), String> {
     fn clear_readonly(p: &Path) {
         if let Ok(rd) = fs::read_dir(p) {
             for e in rd.flatten() {
@@ -911,39 +750,10 @@ fn remove_dir_robust(dir: &Path) -> Result<(), String> {
 pub fn uninstall_emulator(app: AppHandle, id: String) -> Result<(), String> {
     let dir = emu_dir(&app, &id)?;
     let root = emulators_dir(&app)?;
-    // A libretro core: remove its .dll from the shared RetroArch, and RetroArch itself when no core is left.
-    let core_dll = read_installed(&dir)
-        .filter(|i| i.exe_rel_path.starts_with(&format!("../{RETROARCH_ID}/")))
-        .map(|i| i.asset_name.trim_end_matches(".zip").to_string());
     let prev = root.join(format!("{id}.prev"));
     for d in [dir, prev] {
         if d.exists() {
             remove_dir_robust(&d)?;
-        }
-    }
-    if let Some(dll) = core_dll {
-        if dll.ends_with("_libretro.dll") && !dll.contains(['/', '\\']) {
-            if let Some(info) = read_installed(&root.join(RETROARCH_ID)) {
-                if let Some(cores) = root.join(RETROARCH_ID).join(&info.exe_rel_path).parent() {
-                    let _ = fs::remove_file(cores.join("cores").join(&dll));
-                }
-            }
-        }
-        let others = fs::read_dir(&root)
-            .map(|rd| {
-                rd.flatten().any(|e| {
-                    e.file_name() != RETROARCH_ID
-                        && read_installed(&e.path())
-                            .map(|i| i.exe_rel_path.starts_with(&format!("../{RETROARCH_ID}/")))
-                            .unwrap_or(false)
-                })
-            })
-            .unwrap_or(true);
-        if !others {
-            let ra = root.join(RETROARCH_ID);
-            if ra.exists() {
-                remove_dir_robust(&ra)?;
-            }
         }
     }
     Ok(())
@@ -966,12 +776,6 @@ mod tests {
     fn http_dates() {
         assert_eq!(http_date_ymd("Tue, 18 Nov 2026 03:12:11 GMT").as_deref(), Some("2026-11-18"));
         assert_eq!(http_date_ymd("nonsense"), None);
-    }
-
-    #[test]
-    fn libretro_host_is_allowed() {
-        assert!(check_host(RETROARCH_URL).is_ok());
-        assert!(check_host(&format!("{CORE_URL}/stella_libretro.dll.zip")).is_ok());
     }
 
     #[test]

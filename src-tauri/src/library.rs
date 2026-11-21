@@ -1,5 +1,6 @@
 //! Library: SQLite storage, game detection, importing and scanning.
-//! ROMs are never copied or modified. Only their paths are stored.
+//! Games are never modified. A scanned folder is only read; its games are registered by path.
+//! Games dragged onto the window are copied into Trayload's games folder first (see games.rs).
 
 use crate::registry::{self, System};
 use regex::Regex;
@@ -60,6 +61,14 @@ CREATE TABLE IF NOT EXISTS game_overrides (
   extra_args TEXT NOT NULL DEFAULT '',
   notes TEXT NOT NULL DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS game_discs (
+  game_id INTEGER NOT NULL,
+  path TEXT NOT NULL,
+  PRIMARY KEY (game_id, path)
+);
+CREATE TABLE IF NOT EXISTS ignored_files (
+  path TEXT PRIMARY KEY
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -107,15 +116,15 @@ pub struct Summary {
     pub missing: usize,
 }
 
-fn e<E: ToString>(x: E) -> String {
+pub(crate) fn e<E: ToString>(x: E) -> String {
     x.to_string()
 }
 
-fn lock(db: &Db) -> Result<MutexGuard<'_, Connection>, String> {
+pub(crate) fn lock(db: &Db) -> Result<MutexGuard<'_, Connection>, String> {
     db.0.lock().map_err(|_| "database lock poisoned".to_string())
 }
 
-fn unix_now() -> i64 {
+pub(crate) fn unix_now() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
@@ -157,7 +166,7 @@ fn norm(s: &str) -> String {
     s.to_lowercase().chars().filter(|c| c.is_ascii_alphanumeric()).collect()
 }
 
-enum Detected {
+pub(crate) enum Detected {
     System(String),
     Ambiguous(Vec<String>),
 }
@@ -186,7 +195,7 @@ impl Detector {
     }
 
     /// None = not a game file we know. Layers: unique extension, header sniff, folder name, ask.
-    fn detect(&self, path: &Path) -> Option<Detected> {
+    pub(crate) fn detect(&self, path: &Path) -> Option<Detected> {
         let ext = path.extension()?.to_str()?.to_lowercase();
         let cands = self.by_ext.get(&ext)?;
         if cands.len() == 1 {
@@ -308,7 +317,7 @@ fn sniff(path: &Path, ext: &str, cands: &[String]) -> Option<String> {
 
 // ---------- file collection ----------
 
-fn key(p: &Path) -> String {
+pub(crate) fn key(p: &Path) -> String {
     p.to_string_lossy().to_lowercase().replace('/', "\\")
 }
 
@@ -339,44 +348,72 @@ pub fn collect_files(paths: &[PathBuf]) -> Vec<PathBuf> {
     out
 }
 
-/// Track files named by .cue / .gdi sheets belong to that game and are not games themselves.
-fn referenced_tracks(files: &[PathBuf]) -> HashSet<String> {
+/// The files a .cue / .gdi sheet names (or a .ccd / .mds image's partner files), resolved next to the sheet.
+pub(crate) fn sheet_tracks(f: &Path) -> Vec<PathBuf> {
+    let ext = f.extension().and_then(|x| x.to_str()).unwrap_or("").to_lowercase();
+    let Some(dir) = f.parent() else { return vec![] };
+    if ext == "ccd" {
+        return ["img", "sub"].iter().map(|x| f.with_extension(x)).collect();
+    }
+    if ext == "mds" {
+        return vec![f.with_extension("mdf")];
+    }
+    if ext != "cue" && ext != "gdi" {
+        return vec![];
+    }
     let cue_re = Regex::new(r#"(?i)^\s*FILE\s+"([^"]+)""#).unwrap();
     let quoted = Regex::new(r#""([^"]+)""#).unwrap();
+    let Ok(bytes) = fs::read(f) else { return vec![] };
+    let text = String::from_utf8_lossy(&bytes);
+    let mut out = vec![];
+    for (i, line) in text.lines().enumerate() {
+        let name: Option<String> = if ext == "cue" {
+            cue_re.captures(line).map(|c| c[1].to_string())
+        } else if i == 0 {
+            None
+        } else if let Some(c) = quoted.captures(line) {
+            Some(c[1].to_string())
+        } else {
+            line.split_whitespace().nth(4).map(|s| s.to_string())
+        };
+        if let Some(n) = name {
+            out.push(dir.join(n));
+        }
+    }
+    out
+}
+
+/// Track files named by .cue / .gdi sheets belong to that game and are not games themselves.
+pub(crate) fn referenced_tracks(files: &[PathBuf]) -> HashSet<String> {
     let mut set = HashSet::new();
     for f in files {
-        let ext = f.extension().and_then(|x| x.to_str()).unwrap_or("").to_lowercase();
-        if ext != "cue" && ext != "gdi" {
-            continue;
-        }
-        let Ok(bytes) = fs::read(f) else { continue };
-        let text = String::from_utf8_lossy(&bytes);
-        let Some(dir) = f.parent() else { continue };
-        for (i, line) in text.lines().enumerate() {
-            let name: Option<String> = if ext == "cue" {
-                cue_re.captures(line).map(|c| c[1].to_string())
-            } else if i == 0 {
-                None
-            } else if let Some(c) = quoted.captures(line) {
-                Some(c[1].to_string())
-            } else {
-                line.split_whitespace().nth(4).map(|s| s.to_string())
-            };
-            if let Some(n) = name {
-                set.insert(key(&dir.join(n)));
-            }
+        for t in sheet_tracks(f) {
+            set.insert(key(&t));
         }
     }
     set
 }
 
-fn title_of(path: &Path) -> String {
+/// "Game (Disc 2)" gives ("Game", 2). Only bracketed tags count, so ordinary titles are left alone.
+pub(crate) fn disc_tag(stem: &str) -> Option<(String, u32)> {
+    let re = Regex::new(r"(?i)^(.*?)[\s._-]*[\(\[]\s*(?:disc|disk|cd)\s*(\d{1,2})(?:\s*(?:of|/)\s*\d{1,2})?\s*[\)\]](.*)$").ok()?;
+    let c = re.captures(stem)?;
+    let n: u32 = c[2].parse().ok()?;
+    let base = format!("{}{}", &c[1], &c[3]).split_whitespace().collect::<Vec<_>>().join(" ");
+    if base.is_empty() {
+        None
+    } else {
+        Some((base, n))
+    }
+}
+
+pub(crate) fn title_of(path: &Path) -> String {
     path.file_stem().map(|s| s.to_string_lossy().replace('_', " ")).unwrap_or_else(|| "Untitled".into())
 }
 
 // ---------- importing ----------
 
-struct Row {
+pub(crate) struct Row {
     path: String,
     size: i64,
     mtime: i64,
@@ -386,9 +423,10 @@ struct Row {
 
 pub fn import_files(db: &Db, det: &Detector, files: Vec<PathBuf>) -> Result<Summary, String> {
     let skip = referenced_tracks(&files);
+    let ignored = ignored_keys(db)?;
     let mut rows = vec![];
     for f in &files {
-        if skip.contains(&key(f)) {
+        if skip.contains(&key(f)) || ignored.contains(&key(f)) {
             continue;
         }
         let Some(detected) = det.detect(f) else { continue };
@@ -412,6 +450,7 @@ pub fn import_files(db: &Db, det: &Detector, files: Vec<PathBuf>) -> Result<Summ
     let tx = conn.transaction().map_err(e)?;
     let mut s = Summary::default();
     let now = unix_now();
+    let extra_discs = group_discs(&tx, &mut rows)?;
     for r in rows {
         let existing: Option<(i64, i64, i64, i64)> = tx
             .query_row(
@@ -462,8 +501,76 @@ pub fn import_files(db: &Db, det: &Detector, files: Vec<PathBuf>) -> Result<Summ
             }
         }
     }
+    for (head, extra) in extra_discs {
+        tx.execute(
+            "INSERT OR IGNORE INTO game_discs (game_id, path) SELECT id, ?2 FROM games WHERE path = ?1",
+            params![head, extra],
+        )
+        .map_err(e)?;
+    }
     tx.commit().map_err(e)?;
     Ok(s)
+}
+
+/// Several discs of one game ("Game (Disc 1).cue", "Game (Disc 2).cue") become one library entry:
+/// the first disc is the entry, the other discs are remembered next to it.
+/// A group is left alone if one of its discs is already in the library as its own game.
+fn group_discs(tx: &rusqlite::Transaction, rows: &mut Vec<Row>) -> Result<Vec<(String, String)>, String> {
+    let mut groups: HashMap<(String, String, String), Vec<(u32, usize)>> = HashMap::new();
+    for (i, r) in rows.iter().enumerate() {
+        let Detected::System(sys) = &r.detected else { continue };
+        let p = Path::new(&r.path);
+        let Some((base, n)) = p.file_stem().and_then(|x| x.to_str()).and_then(disc_tag) else { continue };
+        let dir = p.parent().map(key).unwrap_or_default();
+        groups.entry((dir, base.to_lowercase(), sys.clone())).or_default().push((n, i));
+    }
+    let mut drop_rows: HashSet<usize> = HashSet::new();
+    let mut extras = vec![];
+    for (_, mut members) in groups {
+        if members.len() < 2 {
+            continue;
+        }
+        members.sort();
+        let mut as_own_game = 0;
+        for (_, i) in &members {
+            let n: i64 = tx
+                .query_row("SELECT COUNT(*) FROM games WHERE path = ?1", [&rows[*i].path], |r| r.get(0))
+                .map_err(e)?;
+            as_own_game += n;
+        }
+        let head = members[0].1;
+        let head_exists: i64 = tx
+            .query_row("SELECT COUNT(*) FROM games WHERE path = ?1", [&rows[head].path], |r| r.get(0))
+            .map_err(e)?;
+        // Fine if only the first disc is known (or nothing is); otherwise keep the old entries as they are.
+        if as_own_game > head_exists {
+            continue;
+        }
+        if head_exists == 0 {
+            if let Some((base, _)) = Path::new(&rows[head].path).file_stem().and_then(|x| x.to_str()).and_then(disc_tag) {
+                rows[head].title = base.replace('_', " ");
+            }
+        }
+        for (_, i) in members.iter().skip(1) {
+            extras.push((rows[head].path.clone(), rows[*i].path.clone()));
+            drop_rows.insert(*i);
+        }
+    }
+    let mut i = 0;
+    rows.retain(|_| {
+        let keep = !drop_rows.contains(&i);
+        i += 1;
+        keep
+    });
+    Ok(extras)
+}
+
+fn ignored_keys(db: &Db) -> Result<HashSet<String>, String> {
+    let conn = lock(db)?;
+    let mut st = conn.prepare("SELECT path FROM ignored_files").map_err(e)?;
+    let rows = st.query_map([], |r| r.get::<_, String>(0)).map_err(e)?;
+    let v: Vec<String> = rows.collect::<Result<_, _>>().map_err(e)?;
+    Ok(v.iter().map(|p| key(Path::new(p))).collect())
 }
 
 fn refresh_missing(db: &Db, s: &mut Summary) -> Result<(), String> {
@@ -497,7 +604,7 @@ fn refresh_missing(db: &Db, s: &mut Summary) -> Result<(), String> {
     Ok(())
 }
 
-fn get_folders(db: &Db) -> Result<Vec<String>, String> {
+pub(crate) fn get_folders(db: &Db) -> Result<Vec<String>, String> {
     let conn = lock(db)?;
     let v: Option<String> = conn
         .query_row("SELECT value FROM settings WHERE key = 'rom_folders'", [], |r| r.get(0))
@@ -506,7 +613,7 @@ fn get_folders(db: &Db) -> Result<Vec<String>, String> {
     Ok(v.and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default())
 }
 
-fn set_folders(db: &Db, folders: &[String]) -> Result<(), String> {
+pub(crate) fn set_folders(db: &Db, folders: &[String]) -> Result<(), String> {
     let conn = lock(db)?;
     let json = serde_json::to_string(folders).map_err(e)?;
     conn.execute(
@@ -520,7 +627,7 @@ fn set_folders(db: &Db, folders: &[String]) -> Result<(), String> {
 
 /// Scan every configured ROM folder (incremental), then check for missing files.
 pub fn rescan_blocking(app: &AppHandle, db: &Db) -> Result<Summary, String> {
-    let folders = get_folders(db)?;
+    let folders = crate::games::scan_folders(app, db)?;
     let reg = registry::load(app)?;
     let det = Detector::new(&reg.systems);
     let paths: Vec<PathBuf> = folders.iter().map(PathBuf::from).collect();
@@ -595,21 +702,6 @@ pub fn get_rom_folders(db: tauri::State<'_, Db>) -> Result<Vec<String>, String> 
 }
 
 #[tauri::command]
-pub async fn import_paths(app: AppHandle, db: tauri::State<'_, Db>, paths: Vec<String>) -> Result<Summary, String> {
-    let db = db.inner().clone();
-    let reg = registry::load(&app)?;
-    let s = tokio::task::spawn_blocking(move || {
-        let det = Detector::new(&reg.systems);
-        let files = collect_files(&paths.iter().map(PathBuf::from).collect::<Vec<_>>());
-        import_files(&db, &det, files)
-    })
-    .await
-    .map_err(e)??;
-    let _ = app.emit("library-changed", &s);
-    Ok(s)
-}
-
-#[tauri::command]
 pub async fn add_rom_folder(app: AppHandle, db: tauri::State<'_, Db>, path: String) -> Result<Summary, String> {
     let db = db.inner().clone();
     tokio::task::spawn_blocking(move || {
@@ -634,26 +726,6 @@ pub async fn remove_rom_folder(db: tauri::State<'_, Db>, path: String) -> Result
 pub async fn rescan(app: AppHandle, db: tauri::State<'_, Db>) -> Result<Summary, String> {
     let db = db.inner().clone();
     tokio::task::spawn_blocking(move || rescan_blocking(&app, &db)).await.map_err(e)?
-}
-
-#[tauri::command]
-pub fn assign_system(app: AppHandle, db: tauri::State<'_, Db>, path: String, system_id: String) -> Result<(), String> {
-    let reg = registry::load(&app)?;
-    if !reg.systems.iter().any(|s| s.id == system_id) {
-        return Err("unknown system".into());
-    }
-    let mut conn = lock(&db)?;
-    let tx = conn.transaction().map_err(e)?;
-    let (size, mtime): (i64, i64) = tx
-        .query_row("SELECT size, mtime FROM unassigned WHERE path = ?1", [&path], |r| Ok((r.get(0)?, r.get(1)?)))
-        .map_err(|_| "that file is no longer waiting for a system".to_string())?;
-    tx.execute(
-        "INSERT OR IGNORE INTO games (system_id, title, path, size, mtime, added_at) VALUES (?1,?2,?3,?4,?5,?6)",
-        params![system_id, title_of(Path::new(&path)), path, size, mtime, unix_now()],
-    )
-    .map_err(e)?;
-    tx.execute("DELETE FROM unassigned WHERE path = ?1", [&path]).map_err(e)?;
-    tx.commit().map_err(e)
 }
 
 #[tauri::command]
@@ -764,6 +836,54 @@ mod tests {
             Some(Detected::System(s)) => assert_eq!(s, "gc"),
             _ => panic!("GC magic should decide"),
         }
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn disc_tags() {
+        assert_eq!(disc_tag("Final Fantasy VII (Disc 2)"), Some(("Final Fantasy VII".into(), 2)));
+        assert_eq!(disc_tag("Game (USA) (Disc 1 of 3)"), Some(("Game (USA)".into(), 1)));
+        assert_eq!(disc_tag("Game [CD3] (Rev A)"), Some(("Game (Rev A)".into(), 3)));
+        assert_eq!(disc_tag("Disc World"), None);
+        assert_eq!(disc_tag("(Disc 1)"), None);
+    }
+
+    #[test]
+    fn discs_become_one_entry() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
+        let db = Db(Arc::new(Mutex::new(conn)));
+        let dir = tmp("discs");
+        for n in 1..=2 {
+            fs::write(dir.join(format!("Big Game (Disc {n}).gba")), b"x").unwrap();
+        }
+        let files = collect_files(&[dir.clone()]);
+        import_files(&db, &det(), files.clone()).unwrap();
+        let conn = db.0.lock().unwrap();
+        let (n, title): (i64, String) =
+            conn.query_row("SELECT COUNT(*), MIN(title) FROM games", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(n, 1);
+        assert_eq!(title, "Big Game");
+        let d: i64 = conn.query_row("SELECT COUNT(*) FROM game_discs", [], |r| r.get(0)).unwrap();
+        assert_eq!(d, 1);
+        drop(conn);
+        // A second scan changes nothing.
+        let s = import_files(&db, &det(), files).unwrap();
+        assert_eq!(s.added, 0);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn ignored_files_are_skipped() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
+        let db = Db(Arc::new(Mutex::new(conn)));
+        let dir = tmp("ignored");
+        let f = dir.join("Hidden.gba");
+        fs::write(&f, b"x").unwrap();
+        db.0.lock().unwrap().execute("INSERT INTO ignored_files (path) VALUES (?1)", [f.to_string_lossy().to_string()]).unwrap();
+        let s = import_files(&db, &det(), vec![f]).unwrap();
+        assert_eq!(s.added, 0);
         let _ = fs::remove_dir_all(dir);
     }
 

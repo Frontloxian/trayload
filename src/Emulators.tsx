@@ -117,7 +117,6 @@ export default function Emulators({ updates, onChanged }: { updates: UpdateInfo[
                   <div className="muted small">
                     {e.systems.join(", ")}{" "}
                     {e.tier === "experimental" && <span className="pill purple">Experimental</span>}
-                    {e.tier === "core" && <span className="pill muted">RetroArch core</span>}
                   </div>
                 </div>
                 <div className="status">
@@ -166,12 +165,6 @@ export default function Emulators({ updates, onChanged }: { updates: UpdateInfo[
                 </div>
               )}
               {e.warning && <p className="muted small warn">{e.warning}</p>}
-              {e.tier === "core" && !e.installed && (
-                <p className="muted small warn">
-                  Runs inside RetroArch, which is installed automatically the first time (about 240 MB). Later cores are
-                  small.
-                </p>
-              )}
               {errors[e.id] && <p className="error small">{errors[e.id]}</p>}
             </li>
           );

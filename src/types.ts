@@ -2,8 +2,7 @@ export type Source =
   | { type: "github"; repo: string; assetPattern: string }
   | { type: "page"; url: string; assetPattern?: string | null }
   | { type: "forgejo"; host: string; repo: string; assetPattern: string }
-  | { type: "direct"; url: string }
-  | { type: "core"; core: string };
+  | { type: "direct"; url: string };
 
 export interface System {
   id: string;
@@ -17,6 +16,8 @@ export interface System {
 
 export interface Registry {
   systems: System[];
+  /** Systems Trayload no longer has an emulator for. Their games stay in the library. */
+  retired?: { id: string; name: string }[];
 }
 
 export interface InstalledInfo {
@@ -175,6 +176,41 @@ export interface RemovedGame {
   title: string;
   systemId: string;
   path: string;
+}
+
+export interface GamesFolder {
+  path: string;
+  isDefault: boolean;
+  exists: boolean;
+}
+
+export interface DeleteSummary {
+  deleted: number;
+  recycled: number;
+  leftAlone: number;
+  failed: string[];
+}
+
+export interface LegacyStatus {
+  present: boolean;
+  path: string;
+  totalBytes: number;
+  folders: { name: string; bytes: number }[];
+}
+
+export interface CopyProgress {
+  name: string;
+  filesDone: number;
+  filesTotal: number;
+  bytesDone: number;
+  bytesTotal: number;
+}
+
+export interface CopyFinished {
+  copied: number;
+  skipped: number;
+  failed: string[];
+  cancelled: boolean;
 }
 
 export interface AppInfo {
