@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { AppInfo, LegacyStatus, Registry, ScanSummary, System, UpdateInfo } from "./types";
 import CopyStatus from "./CopyStatus";
+import About from "./About";
+import NowPlaying from "./NowPlaying";
 import LegacyCleanup from "./LegacyCleanup";
 import Emulators from "./Emulators";
 import ErrorBoundary from "./ErrorBoundary";
@@ -23,7 +25,7 @@ import { listen } from "@tauri-apps/api/event";
 import logo from "./assets/trayload-logo-small.svg";
 import "./App.css";
 
-type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings";
+type Page = "home" | "library" | "emulators" | "setup" | "news" | "settings" | "about";
 
 const NAV: { id: Page; label: string; icon: IconName; sub: string }[] = [
   { id: "home", label: "Home", icon: "home", sub: "Pick up where you left off" },
@@ -33,6 +35,7 @@ const NAV: { id: Page; label: string; icon: IconName; sub: string }[] = [
   { id: "news", label: "News", icon: "news", sub: "Releases and updates from the emulation world" },
 ];
 const SETTINGS_SUB = "Artwork, music, folders, backups and updates";
+const ABOUT_SUB = "Version, licenses and the projects Trayload builds on";
 
 export default function App() {
   const [page, setPage] = useState<Page>("home");
@@ -209,8 +212,8 @@ export default function App() {
   }, []);
 
   const current = NAV.find((n) => n.id === page);
-  const title = current?.label ?? "Settings";
-  const subtitle = current?.sub ?? SETTINGS_SUB;
+  const title = current?.label ?? (page === "about" ? "About and Credits" : "Settings");
+  const subtitle = current?.sub ?? (page === "about" ? ABOUT_SUB : SETTINGS_SUB);
 
   return (
     <div className="shell">
@@ -249,6 +252,10 @@ export default function App() {
         <button className="nav" aria-current={page === "settings" ? "page" : undefined} onClick={() => setPage("settings")}>
           <Icon name="settings" />
           <span className="nav-label">Settings</span>
+        </button>
+        <button className="nav" aria-current={page === "about" ? "page" : undefined} onClick={() => setPage("about")}>
+          <Icon name="about" />
+          <span className="nav-label">About and Credits</span>
         </button>
       </nav>
 
@@ -329,6 +336,8 @@ export default function App() {
           <Setup onEmulators={() => setPage("emulators")} />
         ) : page === "news" ? (
           <News updates={updates} onEmulators={() => setPage("emulators")} />
+        ) : page === "about" ? (
+          <About version={version} registry={registry} />
         ) : page === "settings" ? (
           <Settings music={music} appUpdate={appUpdate} onWhatsNew={() => setShowNotes(true)} />
         ) : null}
@@ -386,6 +395,7 @@ export default function App() {
         </Dialog>
       )}
       <CopyStatus />
+      <NowPlaying music={music} />
       {help && <ShortcutHelp onClose={() => setHelp(false)} />}
       {quick && (
         <QuickSettings music={music} onClose={() => setQuick(false)} onGo={setPage} onRescan={rescan} onHelp={() => setHelp(true)} />

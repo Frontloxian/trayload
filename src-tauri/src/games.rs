@@ -350,6 +350,8 @@ struct Outcome {
     /// Destination of each group's first file (None if that group was not copied).
     dest_heads: Vec<Option<PathBuf>>,
     dest_files: Vec<PathBuf>,
+    /// For each group, which source file went to which destination (empty if the group was not copied).
+    mapping: Vec<Vec<(PathBuf, PathBuf)>>,
     handled: HashSet<String>,
     copied: usize,
     skipped: usize,
@@ -405,6 +407,7 @@ fn run_groups(
         if state.cancel.load(Ordering::SeqCst) {
             out.cancelled = true;
             out.dest_heads.push(None);
+            out.mapping.push(vec![]);
             continue;
         }
         let sys_name = reg.systems.iter().find(|s| s.id == g.system).map(|s| s.name.clone()).unwrap_or_else(|| g.system.clone());
@@ -417,6 +420,7 @@ fn run_groups(
             prog.send(true);
             out.skipped += 1;
             out.dest_heads.push(Some(dests[0].clone()));
+            out.mapping.push(jobs.iter().zip(&dests).map(|(j, d)| (j.src.clone(), d.clone())).collect());
             out.dest_files.extend(dests);
             continue;
         }
@@ -439,6 +443,7 @@ fn run_groups(
             None => {
                 out.copied += 1;
                 out.dest_heads.push(Some(dests[0].clone()));
+                out.mapping.push(jobs.iter().zip(&dests).map(|(j, d)| (j.src.clone(), d.clone())).collect());
                 out.dest_files.extend(dests);
             }
             Some(x) => {
@@ -451,6 +456,7 @@ fn run_groups(
                     }
                 }
                 out.dest_heads.push(None);
+                out.mapping.push(vec![]);
                 match x {
                     CopyErr::Cancelled => out.cancelled = true,
                     CopyErr::Other(m) => out.failed.push(format!("{}: {m}", g.name)),
@@ -508,6 +514,11 @@ fn import_dropped(app: &AppHandle, db: &Db, state: &CopyState, paths: Vec<PathBu
         run_groups(app, state, &root, &reg, groups)?
     };
     drop(guard);
+    for pairs in &out.mapping {
+        if let Ok(conn) = lock(db) {
+            let _ = record_origins(&conn, pairs, false);
+        }
+    }
 
     let mut to_import: Vec<PathBuf> = files.into_iter().filter(|f| !out.handled.contains(&key(f))).collect();
     to_import.extend(out.dest_files.iter().cloned());
@@ -569,6 +580,9 @@ pub async fn assign_system(
             let stem = final_path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
             let g = Group { heads: vec![final_path.clone()], system: system_id.clone(), name: stem };
             let out = run_groups(&app2, &state, &root, &reg, vec![g])?;
+            if let (Some(pairs), Ok(conn)) = (out.mapping.first(), lock(&db)) {
+                let _ = record_origins(&conn, pairs, false);
+            }
             let _ = app2.emit(
                 "copy-finished",
                 &CopyFinished { copied: out.copied, skipped: out.skipped, failed: out.failed.clone(), cancelled: out.cancelled },
@@ -612,7 +626,42 @@ pub struct DeleteSummary {
     recycled: usize,
     /// Files left alone because they are outside Trayload's games folder.
     left_alone: usize,
+    /// Files of games that had been moved in: put back where they came from.
+    returned: usize,
     failed: Vec<String>,
+}
+
+/// Removes a game's own folder once it is empty. Never the console folder or the games folder.
+fn tidy_parent(f: &Path, root: &Path) {
+    if let Some(parent) = f.parent() {
+        let rel = key(parent).strip_prefix(&format!("{}\\", key(root))).map(|r| r.to_string());
+        if rel.map(|r| r.contains('\\')).unwrap_or(false) {
+            let _ = fs::remove_dir(parent);
+        }
+    }
+}
+
+/// Puts a file back at `original`, creating its folders. Never overwrites: a taken name gets a number.
+fn return_file(src: &Path, original: &Path) -> Result<PathBuf, String> {
+    let dir = original.parent().ok_or("the original location has no folder")?;
+    fs::create_dir_all(dir).map_err(|x| format!("could not create {}: {x}", dir.display()))?;
+    let name = original.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((s, x)) => (s.to_string(), x.to_string()),
+        None => (name.clone(), String::new()),
+    };
+    let mut target = original.to_path_buf();
+    let mut n = 2;
+    while target.exists() {
+        target = dir.join(numbered(&stem, &ext, n));
+        n += 1;
+    }
+    if fs::rename(src, &target).is_err() {
+        // Different drive: copy, then remove the source.
+        fs::copy(src, &target).map_err(|x| x.to_string())?;
+        fs::remove_file(src).map_err(|x| x.to_string())?;
+    }
+    Ok(target)
 }
 
 fn purge(app: &AppHandle, db: &Db, ids: Vec<i64>) -> Result<DeleteSummary, String> {
@@ -647,22 +696,52 @@ fn purge(app: &AppHandle, db: &Db, ids: Vec<i64>) -> Result<DeleteSummary, Strin
                 }
             }
         }
+        let files_all = files.clone();
         let (own, other): (Vec<PathBuf>, Vec<PathBuf>) = files.into_iter().partition(|f| inside(f, &root));
         sum.left_alone += other.len();
         let mut ignore: Vec<PathBuf> =
             heads.iter().filter(|h| h.is_file() && !inside(h, &root) && folders.iter().any(|f| inside(h, Path::new(f)))).cloned().collect();
+        // Games that were moved into the games folder go back to where they came from.
+        let moved: HashMap<String, PathBuf> = {
+            let conn = lock(db)?;
+            let mut m = HashMap::new();
+            for f in &own {
+                let o: Option<String> = conn
+                    .query_row(
+                        "SELECT original FROM file_origins WHERE dest = ?1 AND moved = 1",
+                        [f.to_string_lossy().to_string()],
+                        |r| r.get(0),
+                    )
+                    .optional()
+                    .map_err(e)?;
+                if let Some(o) = o {
+                    m.insert(key(f), PathBuf::from(o));
+                }
+            }
+            m
+        };
+        let (give_back, own): (Vec<PathBuf>, Vec<PathBuf>) = own.into_iter().partition(|f| moved.contains_key(&key(f)));
+        for f in &give_back {
+            match return_file(f, &moved[&key(f)]) {
+                Ok(back) => {
+                    sum.returned += 1;
+                    if folders.iter().any(|d| inside(&back, Path::new(d))) {
+                        ignore.push(back);
+                    }
+                    tidy_parent(f, &root);
+                }
+                Err(x) => {
+                    sum.failed.push(format!("{title}: could not put {} back ({x})", f.display()));
+                    ignore.push(f.clone());
+                }
+            }
+        }
         if !own.is_empty() {
             match trash::delete_all(&own) {
                 Ok(()) => {
                     sum.recycled += own.len();
                     for f in &own {
-                        if let Some(parent) = f.parent() {
-                            let rel = key(parent).strip_prefix(&format!("{}\\", key(&root))).map(|r| r.to_string());
-                            // Remove a game's own (now empty) folder, never the console folder or the games folder.
-                            if rel.map(|r| r.contains('\\')).unwrap_or(false) {
-                                let _ = fs::remove_dir(parent);
-                            }
-                        }
+                        tidy_parent(f, &root);
                     }
                 }
                 Err(x) => {
@@ -679,6 +758,9 @@ fn purge(app: &AppHandle, db: &Db, ids: Vec<i64>) -> Result<DeleteSummary, Strin
             }
             for h in &heads {
                 tx.execute("DELETE FROM unassigned WHERE path = ?1", [h.to_string_lossy().to_string()]).map_err(e)?;
+            }
+            for f in files_all.iter() {
+                tx.execute("DELETE FROM file_origins WHERE dest = ?1", [f.to_string_lossy().to_string()]).map_err(e)?;
             }
             for sql in [
                 "DELETE FROM collection_games WHERE game_id = ?1",
@@ -740,6 +822,301 @@ pub fn clear_ignored_files(db: tauri::State<'_, Db>, path: Option<String>) -> Re
     }
     .map_err(e)?;
     Ok(())
+}
+
+/// Remembers where a copied game's files came from, so the originals can be cleaned up later
+/// and a moved game's files can be put back.
+fn record_origins(conn: &rusqlite::Connection, pairs: &[(PathBuf, PathBuf)], moved: bool) -> Result<(), String> {
+    for (src, dst) in pairs {
+        conn.execute(
+            "INSERT INTO file_origins (dest, original, moved) VALUES (?1, ?2, ?3)
+             ON CONFLICT(dest) DO UPDATE SET original = excluded.original, moved = MAX(moved, excluded.moved)",
+            params![dst.to_string_lossy().to_string(), src.to_string_lossy().to_string(), moved as i64],
+        )
+        .map_err(e)?;
+    }
+    Ok(())
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeftoverOriginal {
+    original: String,
+    dest: String,
+    bytes: u64,
+}
+
+/// Original files that were copied into the games folder and are still where they were.
+#[tauri::command]
+pub async fn plan_originals(db: tauri::State<'_, Db>) -> Result<Vec<LeftoverOriginal>, String> {
+    let db = db.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let rows: Vec<(String, String)> = {
+            let conn = lock(&db)?;
+            let mut st = conn
+                .prepare("SELECT original, dest FROM file_origins WHERE moved = 0 ORDER BY original COLLATE NOCASE")
+                .map_err(e)?;
+            let r = st.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))).map_err(e)?;
+            r.collect::<Result<_, _>>().map_err(e)?
+        };
+        let mut out = vec![];
+        for (original, dest) in rows {
+            let (o, d) = (Path::new(&original), Path::new(&dest));
+            if let (Ok(mo), Ok(md)) = (fs::metadata(o), fs::metadata(d)) {
+                if mo.is_file() && md.is_file() && mo.len() == md.len() {
+                    out.push(LeftoverOriginal { original, dest, bytes: mo.len() });
+                }
+            }
+        }
+        Ok(out)
+    })
+    .await
+    .map_err(e)?
+}
+
+#[derive(Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct OriginalsResult {
+    removed: usize,
+    failed: Vec<String>,
+}
+
+/// Sends original files to the Recycle Bin, but only after checking that the copy in the games folder is identical.
+/// Deleting that game permanently later puts the files back.
+#[tauri::command]
+pub async fn remove_originals(db: tauri::State<'_, Db>, originals: Vec<String>) -> Result<OriginalsResult, String> {
+    let db = db.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let mut res = OriginalsResult::default();
+        for original in originals {
+            let dest: Option<String> = {
+                let conn = lock(&db)?;
+                conn.query_row("SELECT dest FROM file_origins WHERE original = ?1 AND moved = 0", [&original], |r| r.get(0))
+                    .optional()
+                    .map_err(e)?
+            };
+            let Some(dest) = dest else { continue };
+            if !same_content(Path::new(&original), Path::new(&dest)) {
+                res.failed.push(format!("{original}: the copy in the games folder is not identical, so it was kept"));
+                continue;
+            }
+            match trash::delete(&original) {
+                Ok(()) => {
+                    lock(&db)?.execute("UPDATE file_origins SET moved = 1 WHERE dest = ?1", [&dest]).map_err(e)?;
+                    res.removed += 1;
+                }
+                Err(x) => res.failed.push(format!("{original}: {x}")),
+            }
+        }
+        Ok(res)
+    })
+    .await
+    .map_err(e)?
+}
+
+// ---------- bring existing games into the games folder ----------
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrganizeCandidate {
+    id: i64,
+    title: String,
+    system_name: String,
+    path: String,
+    bytes: u64,
+}
+
+fn organize_mode(db: &Db) -> String {
+    match setting(db, "organize_mode").as_deref() {
+        Some("move") => "move".into(),
+        _ => "copy".into(),
+    }
+}
+
+#[tauri::command]
+pub fn get_organize_mode(db: tauri::State<'_, Db>) -> String {
+    organize_mode(&db)
+}
+
+#[tauri::command]
+pub fn set_organize_mode(db: tauri::State<'_, Db>, mode: String) -> Result<(), String> {
+    if mode != "copy" && mode != "move" {
+        return Err("mode must be copy or move".into());
+    }
+    let conn = lock(&db)?;
+    conn.execute(
+        "INSERT INTO settings (key, value) VALUES ('organize_mode', ?1)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        [mode],
+    )
+    .map_err(e)?;
+    Ok(())
+}
+
+fn game_group(db: &Db, id: i64) -> Result<Option<(Group, String)>, String> {
+    let conn = lock(db)?;
+    let Some((path, system, title)) = conn
+        .query_row("SELECT path, system_id, title FROM games WHERE id = ?1 AND removed = 0", [id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?))
+        })
+        .optional()
+        .map_err(e)?
+    else {
+        return Ok(None);
+    };
+    let mut st = conn.prepare("SELECT path FROM game_discs WHERE game_id = ?1 ORDER BY path").map_err(e)?;
+    let rows = st.query_map([id], |r| r.get::<_, String>(0)).map_err(e)?;
+    let discs: Vec<String> = rows.collect::<Result<_, _>>().map_err(e)?;
+    let heads: Vec<PathBuf> = std::iter::once(path.clone()).chain(discs).map(PathBuf::from).collect();
+    Ok(Some((Group { heads, system, name: title.clone() }, title)))
+}
+
+/// Library games whose files are not in Trayload's games folder yet.
+#[tauri::command]
+pub async fn plan_organize(app: AppHandle, db: tauri::State<'_, Db>) -> Result<Vec<OrganizeCandidate>, String> {
+    let db = db.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let reg = registry::load(&app)?;
+        let root = games_root(&app, &db)?;
+        let rows: Vec<(i64, String, String)> = {
+            let conn = lock(&db)?;
+            let mut st = conn
+                .prepare("SELECT id, path, system_id FROM games WHERE removed = 0 AND missing = 0 ORDER BY title COLLATE NOCASE")
+                .map_err(e)?;
+            let r = st
+                .query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?)))
+                .map_err(e)?;
+            r.collect::<Result<_, _>>().map_err(e)?
+        };
+        let mut out = vec![];
+        for (id, path, system) in rows {
+            if inside(Path::new(&path), &root) || !Path::new(&path).is_file() {
+                continue;
+            }
+            let Some((g, title)) = game_group(&db, id)? else { continue };
+            let bytes: u64 = jobs_of(&g).iter().map(|j| j.size).sum();
+            let system_name = reg.systems.iter().find(|s| s.id == system).map(|s| s.name.clone()).unwrap_or(system);
+            out.push(OrganizeCandidate { id, title, system_name, path, bytes });
+        }
+        Ok(out)
+    })
+    .await
+    .map_err(e)?
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrganizeSummary {
+    done: usize,
+    failed: Vec<String>,
+    cancelled: bool,
+    mode: String,
+}
+
+/// Copies (default) or moves the chosen games into the games folder and points the library at the new files.
+/// A moved game remembers where it came from, so deleting it permanently puts its files back.
+#[tauri::command]
+pub async fn organize_games(
+    app: AppHandle,
+    db: tauri::State<'_, Db>,
+    state: tauri::State<'_, CopyState>,
+    ids: Vec<i64>,
+) -> Result<OrganizeSummary, String> {
+    let (db, state) = (db.inner().clone(), state.inner().clone());
+    let app2 = app.clone();
+    let summary = tokio::task::spawn_blocking(move || -> Result<OrganizeSummary, String> {
+        let reg = registry::load(&app2)?;
+        let root = games_root(&app2, &db)?;
+        let folders = scan_folders(&app2, &db)?;
+        let mode = organize_mode(&db);
+        let moving = mode == "move";
+        let mut groups = vec![];
+        let mut order = vec![];
+        for id in ids {
+            if let Some((g, _)) = game_group(&db, id)? {
+                if !inside(&g.heads[0], &root) {
+                    groups.push(g);
+                    order.push(id);
+                }
+            }
+        }
+        let guard = state.start()?;
+        let heads: Vec<Vec<PathBuf>> = groups.iter().map(|g| g.heads.clone()).collect();
+        let out = run_groups(&app2, &state, &root, &reg, groups)?;
+        drop(guard);
+        let mut done = 0;
+        let mut failed = out.failed.clone();
+        for (i, id) in order.iter().enumerate() {
+            let map = &out.mapping[i];
+            if map.is_empty() {
+                continue;
+            }
+            let lookup = |p: &Path| map.iter().find(|(s, _)| key(s) == key(p)).map(|(_, d)| d.clone());
+            let Some(new_head) = lookup(&heads[i][0]) else { continue };
+            let mut conn = lock(&db)?;
+            let tx = conn.transaction().map_err(e)?;
+            let clash: i64 = tx
+                .query_row(
+                    "SELECT COUNT(*) FROM games WHERE path = ?1 AND id != ?2",
+                    params![new_head.to_string_lossy().to_string(), id],
+                    |r| r.get(0),
+                )
+                .map_err(e)?;
+            if clash > 0 {
+                failed.push(format!("{}: an identical file is already in your library", heads[i][0].display()));
+                continue;
+            }
+            tx.execute(
+                "UPDATE games SET path = ?2, missing = 0 WHERE id = ?1",
+                params![id, new_head.to_string_lossy().to_string()],
+            )
+            .map_err(e)?;
+            for d in heads[i].iter().skip(1) {
+                if let Some(nd) = lookup(d) {
+                    tx.execute(
+                        "UPDATE game_discs SET path = ?3 WHERE game_id = ?1 AND path = ?2",
+                        params![id, d.to_string_lossy().to_string(), nd.to_string_lossy().to_string()],
+                    )
+                    .map_err(e)?;
+                }
+            }
+            record_origins(&tx, map, false)?;
+            if !moving {
+                // The originals stay on disk. Keep a scanned folder from adding them again.
+                for h in &heads[i] {
+                    if folders.iter().any(|f| inside(h, Path::new(f))) {
+                        tx.execute("INSERT OR IGNORE INTO ignored_files (path) VALUES (?1)", [h.to_string_lossy().to_string()])
+                            .map_err(e)?;
+                    }
+                }
+            }
+            tx.commit().map_err(e)?;
+            drop(conn);
+            if moving {
+                for (src, dst) in map {
+                    let same = fs::metadata(src).map(|m| m.len()).ok() == fs::metadata(dst).map(|m| m.len()).ok();
+                    if same && fs::remove_file(src).is_ok() {
+                        if let Ok(conn) = lock(&db) {
+                            let _ = conn.execute(
+                                "UPDATE file_origins SET moved = 1 WHERE dest = ?1",
+                                [dst.to_string_lossy().to_string()],
+                            );
+                        }
+                    }
+                }
+            }
+            done += 1;
+        }
+        let _ = app2.emit(
+            "copy-finished",
+            &CopyFinished { copied: done, skipped: 0, failed: vec![], cancelled: out.cancelled },
+        );
+        Ok(OrganizeSummary { done, failed, cancelled: out.cancelled, mode })
+    })
+    .await
+    .map_err(e)??;
+    let _ = app.emit("library-changed", ());
+    Ok(summary)
 }
 
 #[cfg(test)]
@@ -835,6 +1212,23 @@ mod tests {
         assert!(matches!(r, Err(CopyErr::Cancelled)));
         assert!(!d.join("out").join("a.bin").exists());
         assert!(!d.join("out").join("a.bin.trayload-part").exists());
+        let _ = fs::remove_dir_all(d);
+    }
+
+    #[test]
+    fn returns_a_file_without_overwriting() {
+        let d = tmp("return");
+        fs::write(d.join("held.gba"), b"mine").unwrap();
+        let original = d.join("gone").join("deep").join("Game.gba");
+        // The folder does not exist yet: it is created.
+        let back = return_file(&d.join("held.gba"), &original).unwrap();
+        assert_eq!(back, original);
+        assert_eq!(fs::read(&original).unwrap(), b"mine");
+        // Something is already at the original path: the file gets a number.
+        fs::write(d.join("held2.gba"), b"other").unwrap();
+        let back2 = return_file(&d.join("held2.gba"), &original).unwrap();
+        assert_eq!(back2, d.join("gone").join("deep").join("Game (2).gba"));
+        assert_eq!(fs::read(&original).unwrap(), b"mine");
         let _ = fs::remove_dir_all(d);
     }
 

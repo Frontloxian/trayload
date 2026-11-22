@@ -2,6 +2,15 @@
 
 Each release's notes are shown inside Trayload (after updating, and under Settings > Trayload updates > What's new) and on the GitHub release page. The newest version goes at the top, under its own `## x.y.z` heading.
 
+## 1.2.0
+
+### New
+- **Install all:** one button on the Emulators tab installs everything that is not installed yet. A list shows each emulator with its download size, and you can untick any. Experimental emulators start unticked. Installs run one after another ("3 of 20"), keep going if one fails, can be cancelled, and end with a summary.
+- **Bring existing games into the games folder:** Settings > Games folder lists the games you added before the games folder existed, and you pick which to include. The default is copy (your originals stay). Switch to move if you want the originals removed after the copy is checked. If you permanently delete a moved game later, its files go back to where they came from, and the folders are recreated if they are gone. With Move selected, "Remove originals of copied games…" sends leftover originals of earlier copies to the Recycle Bin once their copies check out.
+- **Smart collections:** Never played and Recently added join Recently played and Most played, under their own heading in the Library.
+- **Music:** a shuffle button in the mini player, and a short "Now playing" note when a new track starts.
+- **About and Credits** page: version, licenses, and links to every emulator project Trayload downloads from.
+
 ## 1.1.5
 
 ### New

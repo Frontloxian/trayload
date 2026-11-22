@@ -66,6 +66,11 @@ CREATE TABLE IF NOT EXISTS game_discs (
   path TEXT NOT NULL,
   PRIMARY KEY (game_id, path)
 );
+CREATE TABLE IF NOT EXISTS file_origins (
+  dest TEXT PRIMARY KEY,
+  original TEXT NOT NULL,
+  moved INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS ignored_files (
   path TEXT PRIMARY KEY
 );

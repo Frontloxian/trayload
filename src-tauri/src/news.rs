@@ -342,9 +342,33 @@ pub fn open_news_link(app: AppHandle, url: String) -> Result<(), String> {
     app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
 }
 
+/// Sites the About page may link to: the projects Trayload downloads emulators from.
+fn about_host_ok(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let host = rest.split(['/', '?', '#']).next().unwrap_or("");
+    ["github.com", "git.eden-emu.dev", "ppsspp.org", "www.ppsspp.org", "dolphin-emu.org"].contains(&host)
+}
+
+/// Opens a project link from the About page in the normal browser.
+#[tauri::command]
+pub fn open_about_link(app: AppHandle, url: String) -> Result<(), String> {
+    if !about_host_ok(&url) {
+        return Err("that link is not on a site the About page opens".into());
+    }
+    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn about_links() {
+        assert!(about_host_ok("https://github.com/ares-emulator/ares"));
+        assert!(!about_host_ok("http://github.com/x"));
+        assert!(!about_host_ok("https://github.com.evil.example/x"));
+        assert!(!about_host_ok("https://example.com/github.com"));
+    }
 
     #[test]
     fn embedded_config_parses() {

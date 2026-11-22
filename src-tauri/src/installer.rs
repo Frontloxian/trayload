@@ -560,6 +560,53 @@ pub async fn check_updates(app: AppHandle) -> Result<Vec<UpdateInfo>, String> {
     Ok(out)
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EmulatorSize {
+    id: String,
+    bytes: Option<u64>,
+}
+
+/// Approximate download sizes for the emulators that are not installed yet (used by Install all).
+/// A size is None when the site does not say.
+#[tauri::command]
+pub async fn emulator_sizes(app: AppHandle) -> Result<Vec<EmulatorSize>, String> {
+    let reg = registry::load(&app)?;
+    let client = http_client()?;
+    let mut seen: Vec<String> = vec![];
+    let mut jobs = vec![];
+    for s in &reg.systems {
+        let id = slug(&s.emulator);
+        if seen.contains(&id) {
+            continue;
+        }
+        seen.push(id.clone());
+        let installed = emu_dir(&app, &id).ok().and_then(|d| read_installed(&d)).is_some();
+        if !installed {
+            jobs.push((id, s.source.clone()));
+        }
+    }
+    let results = futures_util::future::join_all(jobs.iter().map(|(_, src)| {
+        let client = client.clone();
+        async move {
+            let r = resolve(&client, src).await.ok()?;
+            check_host(&r.url).ok()?;
+            let resp = client.head(&r.url).send().await.ok()?;
+            if !resp.status().is_success() {
+                return None;
+            }
+            resp.headers()
+                .get(reqwest::header::CONTENT_LENGTH)?
+                .to_str()
+                .ok()?
+                .parse::<u64>()
+                .ok()
+        }
+    }))
+    .await;
+    Ok(jobs.into_iter().zip(results).map(|((id, _), bytes)| EmulatorSize { id, bytes }).collect())
+}
+
 #[tauri::command]
 pub async fn install_emulator(
     app: AppHandle,

@@ -186,22 +186,24 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
   }, [games]);
 
   const favCount = games.filter((g) => g.favorite).length;
-  const fixedOrder = view === "recent" || view === "most";
+  const fixedOrder = view === "recent" || view === "most" || view === "never" || view === "added";
 
   const shown = useMemo(() => {
     let list = games;
     if (view === "fav") list = list.filter((g) => g.favorite);
     else if (view === "recent") list = list.filter((g) => g.lastPlayed !== null);
     else if (view === "most") list = list.filter((g) => g.totalPlaytimeSec > 0);
+    else if (view === "never") list = list.filter((g) => g.lastPlayed === null && g.totalPlaytimeSec === 0);
     else if (view.startsWith("c:")) {
       const set = memberSets.get(Number(view.slice(2)));
       list = list.filter((g) => set?.has(g.id));
     } else if (view.startsWith("s:")) list = list.filter((g) => g.systemId === view.slice(2));
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((g) => g.title.toLowerCase().includes(q));
-    const key: SortKey = view === "recent" ? "played" : view === "most" ? "time" : sort;
+    const key: SortKey =
+      view === "recent" ? "played" : view === "most" ? "time" : view === "added" ? "added" : view === "never" ? "title" : sort;
     const sorted = [...list].sort(COMPARE[key]);
-    return view === "recent" ? sorted.slice(0, 40) : sorted;
+    return view === "recent" || view === "added" ? sorted.slice(0, 40) : sorted;
   }, [games, view, query, sort, memberSets]);
 
   const emptyText =
@@ -211,6 +213,10 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
         ? "Nothing played yet."
         : view === "most"
           ? "Play something and it will show up here."
+          : view === "never"
+            ? "You have played everything in your library."
+            : view === "added"
+              ? "No games yet."
           : selectedCollection
             ? "This collection is empty. Open a game and tick the collection on its page."
             : query
@@ -314,7 +320,10 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
           <nav className="systems" aria-label="Library views">
             {navButton("all", "All games", games.length)}
             {navButton("fav", "Favorites", favCount)}
+            <div className="nav-heading">Smart collections</div>
             {navButton("recent", "Recently played")}
+            {navButton("added", "Recently added")}
+            {navButton("never", "Never played", games.filter((g) => g.lastPlayed === null && g.totalPlaytimeSec === 0).length)}
             {navButton("most", "Most played")}
 
             <div className="nav-heading">Collections</div>

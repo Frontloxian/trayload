@@ -150,7 +150,7 @@ Installer, drag-and-drop import, library with art, launcher with playtime, setup
 - Name: Trayload (name, domain, GitHub and store-page checks came back clean)
 - Licenses: GPL-3.0 for the code, CC BY-NC 4.0 for the music and logo
 - Release plan: see the table at the top. The docs site ships with 1.3.0
-- Built so far: M0-M15 (M15 shipped as 1.1.5) (Switch via Eden, News, music, polish, USB backup, release setup, update notice, soundtrack). Long-tail consoles via RetroArch cores were built in M11 and are removed in 1.2.0. v1.0.0 and v1.1.0 are the release milestones
+- Built so far: M0-M16 (M15 shipped as 1.1.5, M16 as 1.2.0) (Switch via Eden, News, music, polish, USB backup, release setup, update notice, soundtrack). Long-tail consoles via RetroArch cores were built in M11 and are removed in 1.2.0. v1.0.0 and v1.1.0 are the release milestones
 - RetroArch was dropped in 1.1.5
 - Order of deferred items: Lichii play-from-Trayload first, arcade far behind it
 - Homebrew shelf: users do the finding and downloading themselves, no curated list or one-click downloads

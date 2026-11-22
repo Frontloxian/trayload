@@ -4,7 +4,17 @@ import { open } from "@tauri-apps/plugin-dialog";
 import BackupPanel from "./BackupPanel";
 import LegacyCleanup from "./LegacyCleanup";
 import { Dialog } from "./Overlays";
-import type { AppInfo, ArtSettings, DeleteSummary, GamesFolder, LegacyStatus, RemovedGame } from "./types";
+import type {
+  AppInfo,
+  ArtSettings,
+  DeleteSummary,
+  GamesFolder,
+  LegacyStatus,
+  LeftoverOriginal,
+  OrganizeCandidate,
+  OrganizeSummary,
+  RemovedGame,
+} from "./types";
 import type { Music } from "./useMusic";
 import type { AppUpdate } from "./useAppUpdate";
 
@@ -17,6 +27,11 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
   const [gamesFolder, setGamesFolder] = useState<GamesFolder | null>(null);
   const [ignored, setIgnored] = useState<string[]>([]);
   const [legacy, setLegacy] = useState<LegacyStatus | null>(null);
+  const [mode, setMode] = useState<"copy" | "move">("copy");
+  // Feedback for the "bring existing games in" button, shown right under it (the top of the page may be out of view).
+  const [orgNote, setOrgNote] = useState<{ text: string; bad: boolean } | null>(null);
+  const [leftovers, setLeftovers] = useState<{ items: LeftoverOriginal[]; picked: Set<string> } | null>(null);
+  const [plan, setPlan] = useState<{ items: OrganizeCandidate[]; ids: Set<number> } | null>(null);
   // Permanent delete asks first: one game (its id), everything removed ("all"), or nothing (null).
   const [confirmDelete, setConfirmDelete] = useState<RemovedGame | "all" | null>(null);
   const [auto, setAuto] = useState(() => {
@@ -37,7 +52,79 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     invoke<GamesFolder>("get_games_folder").then(setGamesFolder).catch(() => {});
     invoke<string[]>("list_ignored_files").then(setIgnored).catch(() => {});
     invoke<LegacyStatus>("legacy_status").then(setLegacy).catch(() => {});
+    invoke<string>("get_organize_mode").then((m) => setMode(m === "move" ? "move" : "copy")).catch(() => {});
   }, []);
+
+  async function chooseMode(m: "copy" | "move") {
+    setMode(m);
+    await invoke("set_organize_mode", { mode: m }).catch((e) => setError(String(e)));
+  }
+
+  async function openOrganize() {
+    setOrgNote({ text: "Looking for games to bring in…", bad: false });
+    try {
+      const items = await invoke<OrganizeCandidate[]>("plan_organize");
+      if (items.length === 0) {
+        setOrgNote({
+          text: "Nothing to do: every game in your library is already inside the games folder, or its file can't be found.",
+          bad: false,
+        });
+        return;
+      }
+      setOrgNote(null);
+      setPlan({ items, ids: new Set(items.map((i) => i.id)) });
+    } catch (e) {
+      setOrgNote({ text: String(e), bad: true });
+    }
+  }
+
+  async function openLeftovers() {
+    setOrgNote({ text: "Looking for originals…", bad: false });
+    try {
+      const items = await invoke<LeftoverOriginal[]>("plan_originals");
+      if (items.length === 0) {
+        setOrgNote({
+          text: "No copied originals found. Trayload only knows about games it copied since this version. To include older copies, drag the original files onto the Trayload window once: identical files are skipped, and Trayload remembers where they came from.",
+          bad: false,
+        });
+        return;
+      }
+      setOrgNote(null);
+      setLeftovers({ items, picked: new Set(items.map((i) => i.original)) });
+    } catch (e) {
+      setOrgNote({ text: String(e), bad: true });
+    }
+  }
+
+  async function runRemoveOriginals() {
+    if (!leftovers) return;
+    const originals = [...leftovers.picked];
+    setLeftovers(null);
+    setOrgNote({ text: "Removing originals…", bad: false });
+    try {
+      const r = await invoke<{ removed: number; failed: string[] }>("remove_originals", { originals });
+      const text = `Moved ${r.removed} original file${r.removed === 1 ? "" : "s"} to the Recycle Bin.`;
+      setOrgNote({ text: r.failed.length ? `${text} ${r.failed.join(" ")}` : text, bad: r.failed.length > 0 });
+    } catch (e) {
+      setOrgNote({ text: String(e), bad: true });
+    }
+  }
+
+  async function runOrganize() {
+    if (!plan) return;
+    const ids = plan.items.filter((i) => plan.ids.has(i.id)).map((i) => i.id);
+    setPlan(null);
+    setOrgNote({ text: "Working… the progress bar shows at the bottom of the window.", bad: false });
+    try {
+      const r = await invoke<OrganizeSummary>("organize_games", { ids });
+      const verb = r.mode === "move" ? "Moved" : "Copied";
+      const text = `${verb} ${r.done} game${r.done === 1 ? "" : "s"} into the games folder.${r.cancelled ? " Cancelled before the rest." : ""}`;
+      setOrgNote({ text: r.failed.length ? `${text} ${r.failed.join(" ")}` : text, bad: r.failed.length > 0 });
+    } catch (e) {
+      setOrgNote({ text: String(e), bad: true });
+    }
+    load();
+  }
 
   async function pickGamesFolder() {
     const dir = await open({ directory: true, title: "Choose the games folder" });
@@ -60,6 +147,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
           : await invoke<DeleteSummary>("delete_removed_game", { id: target.id });
       const bits = [`Deleted ${r.deleted} game${r.deleted === 1 ? "" : "s"} from Trayload.`];
       if (r.recycled) bits.push(`${r.recycled} file${r.recycled === 1 ? "" : "s"} moved to the Recycle Bin.`);
+      if (r.returned) bits.push(`${r.returned} file${r.returned === 1 ? "" : "s"} put back where ${r.returned === 1 ? "it" : "they"} came from.`);
       if (r.leftAlone) bits.push(`${r.leftAlone} file${r.leftAlone === 1 ? " was" : "s were"} outside Trayload's folder and left alone.`);
       setMsg(bits.join(" "));
       if (r.failed.length) setError(r.failed.join(" "));
@@ -248,6 +336,32 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
             Open games folder
           </button>
         </div>
+        <h3>Games you added earlier</h3>
+        <p className="muted">
+          Bring games that are already in your library into the games folder. You see the list first and pick what
+          to include.
+        </p>
+        <div className="row wrap">
+          <label>
+            <input type="radio" name="organize" checked={mode === "copy"} onChange={() => void chooseMode("copy")} /> Copy
+            (originals stay where they are)
+          </label>
+          <label>
+            <input type="radio" name="organize" checked={mode === "move"} onChange={() => void chooseMode("move")} /> Move
+            (originals are removed after the copy is checked)
+          </label>
+        </div>
+        <div className="row">
+          <button className="btn" onClick={() => void openOrganize()}>
+            Bring existing games in…
+          </button>
+          {mode === "move" && (
+            <button className="btn" onClick={() => void openLeftovers()}>
+              Remove originals of copied games…
+            </button>
+          )}
+        </div>
+        {orgNote && <p className={orgNote.bad ? "error small" : "muted small"}>{orgNote.text}</p>}
       </section>
 
       <section className="section">
@@ -340,8 +454,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         <p className="muted">
           Games you removed from the library stay out of it, even when a folder is scanned again. Restore one to bring
           it back. Delete permanently removes every trace of a game from Trayload (its cover, play time, favorite and
-          collections too). Files in Trayload's games folder go to the Recycle Bin. Files anywhere else are never
-          touched.
+          collections too). Files in Trayload's games folder go to the Recycle Bin (games that were moved in go back where they came from). Files anywhere else are never touched.
         </p>
         {removed.length > 1 && (
           <div className="row">
@@ -416,6 +529,93 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         </div>
         {info && <div className="muted small folder-path">{info.dataFolder}</div>}
       </section>
+      {leftovers && (
+        <Dialog title="Remove the originals of copied games" onClose={() => setLeftovers(null)} wide>
+          <p className="muted">
+            These files were copied into the games folder and the originals are still where they were. Each original is
+            compared with its copy first, then moved to the Recycle Bin. If you delete the game permanently later, the
+            files are put back.
+          </p>
+          <ul className="plain pick-list">
+            {leftovers.items.map((i) => (
+              <li key={i.original}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={leftovers.picked.has(i.original)}
+                    onChange={(ev) =>
+                      setLeftovers((p) => {
+                        if (!p) return p;
+                        const picked = new Set(p.picked);
+                        if (ev.target.checked) picked.add(i.original);
+                        else picked.delete(i.original);
+                        return { ...p, picked };
+                      })
+                    }
+                  />{" "}
+                  <span className="small">{i.original}</span>{" "}
+                  <span className="muted small">{Math.max(1, Math.round(i.bytes / 1048576))} MB</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="row">
+            <button className="btn danger" disabled={leftovers.picked.size === 0} onClick={() => void runRemoveOriginals()}>
+              Remove {leftovers.picked.size} original{leftovers.picked.size === 1 ? "" : "s"}
+            </button>
+            <button className="btn" onClick={() => setLeftovers(null)}>
+              Cancel
+            </button>
+          </div>
+        </Dialog>
+      )}
+      {plan && (
+        <Dialog title="Bring existing games into the games folder" onClose={() => setPlan(null)} wide>
+          <p className="muted">
+            {mode === "move"
+              ? "Mode: move. Each game's files are copied, checked, then removed from where they were. If you delete a moved game permanently later, its files go back to their original place."
+              : "Mode: copy. Your originals stay where they are, so this uses extra disk space. (Change the mode in Settings.)"}
+          </p>
+          <ul className="plain pick-list">
+            {plan.items.map((i) => (
+              <li key={i.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={plan.ids.has(i.id)}
+                    onChange={(ev) =>
+                      setPlan((p) => {
+                        if (!p) return p;
+                        const ids = new Set(p.ids);
+                        if (ev.target.checked) ids.add(i.id);
+                        else ids.delete(i.id);
+                        return { ...p, ids };
+                      })
+                    }
+                  />{" "}
+                  <strong>{i.title}</strong>{" "}
+                  <span className="muted small">
+                    {i.systemName} · {Math.max(1, Math.round(i.bytes / 1048576))} MB
+                  </span>
+                </label>
+                <div className="muted small">{i.path}</div>
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">
+            {plan.ids.size} selected ·{" "}
+            {(plan.items.filter((i) => plan.ids.has(i.id)).reduce((n, i) => n + i.bytes, 0) / 1073741824).toFixed(1)} GB
+          </p>
+          <div className="row">
+            <button className="btn primary" disabled={plan.ids.size === 0} onClick={() => void runOrganize()}>
+              {mode === "move" ? "Move" : "Copy"} {plan.ids.size} game{plan.ids.size === 1 ? "" : "s"}
+            </button>
+            <button className="btn" onClick={() => setPlan(null)}>
+              Cancel
+            </button>
+          </div>
+        </Dialog>
+      )}
       {confirmDelete && (
         <Dialog title="Delete permanently?" onClose={() => setConfirmDelete(null)}>
           <p className="muted">
@@ -423,7 +623,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
               ? `This removes all ${removed.length} removed games from Trayload for good.`
               : `This removes ${confirmDelete.title} from Trayload for good.`}{" "}
             Their covers, play time, favorites and collection entries go too. Files in Trayload's games folder are moved
-            to the Recycle Bin. Files anywhere else are not touched.
+            to the Recycle Bin (games you moved in go back where they came from). Files anywhere else are not touched.
           </p>
           <div className="row">
             <button className="btn danger" onClick={() => void deletePermanently(confirmDelete)}>

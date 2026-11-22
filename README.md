@@ -11,7 +11,8 @@ A Windows launcher for emulators. Install standalone emulators from their offici
 - One-click installs and updates for standalone emulators, downloaded only from each project's official pinned source
 - Drag-and-drop game import with automatic system detection and cover art
 - Setup checklist per system (which BIOS or firmware files you need to supply)
-- Long-tail consoles through RetroArch cores
+- A games folder with one folder per console: dragged-in games are copied there, and permanent delete cleans up after itself
+- Install all, smart collections, and a built-in About and Credits page
 - News tab following emulator releases and blogs
 - USB backup of saves, settings and your library
 - Built-in music with support for your own music packs

@@ -348,3 +348,12 @@ ul.plain {
   padding: 0;
   margin: 6px 0 12px;
 }
+
+/* Install all (M16) */
+.pick-list li { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.pick-list { max-height: 50vh; overflow: auto; }
+
+/* Now playing, About (M16) */
+.now-playing { position: fixed; right: 20px; bottom: 20px; z-index: 35; display: grid; gap: 2px; padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.45); }
+.about-head { display: flex; gap: 18px; align-items: center; }
+.credit-list li { padding: 4px 0; }

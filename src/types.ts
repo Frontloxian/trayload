@@ -38,6 +38,11 @@ export interface EmulatorEntry {
   warning: string | null;
 }
 
+export interface EmulatorSize {
+  id: string;
+  bytes: number | null;
+}
+
 export interface InstallProgress {
   id: string;
   stage: "resolving" | "downloading" | "extracting" | "done";
@@ -188,7 +193,29 @@ export interface DeleteSummary {
   deleted: number;
   recycled: number;
   leftAlone: number;
+  returned: number;
   failed: string[];
+}
+
+export interface OrganizeCandidate {
+  id: number;
+  title: string;
+  systemName: string;
+  path: string;
+  bytes: number;
+}
+
+export interface LeftoverOriginal {
+  original: string;
+  dest: string;
+  bytes: number;
+}
+
+export interface OrganizeSummary {
+  done: number;
+  failed: string[];
+  cancelled: boolean;
+  mode: "copy" | "move";
 }
 
 export interface LegacyStatus {
