@@ -10,7 +10,8 @@ Small releases, roughly one every few weeks. Each release gets a `## x.y.z` sect
 | --- | --- | --- |
 | **1.1.0** | Polish | Logo and icons, five-track built-in soundtrack, update notice, in-app release notes, installer artwork, UI polish |
 | **1.1.x** | Fixes and housekeeping | Bug fixes from first-week feedback, README screenshots, GitHub issue templates, a short contributing note (contributions are under GPL-3.0) |
-| **1.2.0** | Games folder and cleanup | See "1.2.0 in detail" below: default games folder with a folder per console, RetroArch removed (Sega systems move to standalone emulators), Install all, permanent delete in Removed games, multi-disc handling, smart collections, music skip and shuffle with a "Now playing" toast, an About and Credits page |
+| **1.1.5** | Games folder and cleanup (first half) | Shipped early because it does so much: default games folder with a folder per console and copy on drag, RetroArch removed (Sega systems move to ares and Ymir), permanent delete in Removed games, multi-disc handling |
+| **1.2.0** | Library tools | Move existing games into the games folder (see below), Install all, smart collections, music skip and shuffle with a "Now playing" toast, an About and Credits page |
 | **1.3.0** | Keeps itself working | Hosted registry (fix a broken emulator download without a new app release), the docs site (getting started, BIOS checklist per system, FAQ, troubleshooting), optional desktop notifications for major emulator releases, per-game compatibility notes |
 | **1.4.0** | Know your games | ROM verification against No-Intro and Redump lists, release year, developer and genre info, manual cover picker, region and version grouping |
 | **1.5.0** | Addons and play features | Data-only addons (themes, emulator profiles, extra news feeds, music packs), saves and save-state manager, controller layouts per system, screenshot gallery, CRT and shader presets |
@@ -41,7 +42,16 @@ Not tied to a version: code signing (removes the SmartScreen warning; look into 
 - Dragging games onto the window detects the system and copies the game into that console's folder. Unknown systems ask which console first.
 - Multi-file games are copied as one set (`.cue` with its `.bin` tracks, `.m3u` playlists, folder-based games).
 - Never overwrites: a same-name file gets a number, an identical copy is skipped. Large copies show progress with a cancel button, and free disk space is checked first.
-- Games already in the library stay where they are.
+- In 1.1.5, games already in the library stay where they are. Moving them into the games folder comes in 1.2.0 (next section).
+
+**Move existing games into the games folder (1.2.0)**
+- Games added before 1.1.5 (and games from scanned folders) are found by a scan and offered for moving into the games folder, each into its console's folder.
+- A review list shows what will be moved, with sizes and a free-space check, and items can be unticked. Nothing happens until the person confirms.
+- Same rules as dragging games in: sets are kept together, nothing is overwritten, a same-name file gets a number, an identical copy is skipped, with progress and cancel.
+- Default is **copy**: originals stay where they are (this uses extra disk space). A setting in Settings switches to **move**, where each original is removed only after its copy is verified.
+- Trayload remembers each moved game's original path. If a moved game is later deleted permanently, its files go **back to the original path** instead of the Recycle Bin. If that folder no longer exists, Trayload creates it. If a file with the same name is already there, nothing is overwritten (the returned file gets a number).
+- Copied games (originals still in place) and games dragged in work as before: deleting them permanently sends the games-folder copy to the Recycle Bin.
+- Library entries are updated to the new location, so play time, favorites and collections are kept.
 
 **Install all**
 - Button on the Emulators tab. A confirmation list shows what will be installed and the approximate download size, with items that can be unticked. Experimental emulators are left out unless ticked.
@@ -49,16 +59,16 @@ Not tied to a version: code signing (removes the SmartScreen warning; look into 
 
 **Permanent delete (Removed games)**
 - "Delete permanently" per game and "Delete all". It removes every trace of the game from Trayload: the library entry, cover, play time and history, favorites and collection membership.
-- Files in Trayload's own games folder are moved to the Recycle Bin. Files outside Trayload's folders are never touched.
+- Files in Trayload's own games folder are moved to the Recycle Bin, except games that were moved there from another place (1.2.0), which are returned to their original path, creating it if needed. Files outside Trayload's folders are never touched.
 - A game whose file still sits in a scanned folder outside Trayload's folders would come back on the next scan, so only its path is kept in an "Ignored files" list (Settings), which can be cleared.
 
 **Also in 1.2.0**
 - Smart collections (Never played, Recently added, Recently played)
-- Multi-disc handling: one library entry per game, launched with the right disc
+- Multi-disc handling (first version in 1.1.5): one library entry per game
 - Music skip and shuffle, and a "Now playing" toast
 - About and Credits page
 
-**Build order:** M15 (games folder, RetroArch removal, Sega standalone emulators, permanent delete, multi-disc), then M16 (Install all, smart collections, music controls, About page). One release when both are done.
+**Build order:** M15 (games folder, RetroArch removal, Sega standalone emulators, permanent delete, multi-disc) is released as 1.1.5. M16 (move existing games, Install all, smart collections, music controls, About page) is released as 1.2.0.
 
 ## Phase 0: v1 (already planned in PLAN.md)
 Installer, drag-and-drop import, library with art, launcher with playtime, setup checklist, News tab, update badges, and the built-in soundtrack (your own music, with volume, mute and pause-while-playing).
@@ -84,7 +94,7 @@ Installer, drag-and-drop import, library with art, launcher with playtime, setup
 ## Phase 3: More systems
 - **Homebrew and freeware shelf (first item in this phase, not in v1):** a dedicated section of the library for homebrew, freeware and fan-made games. Users find and download these themselves from the authors' own pages and add them like any other game, so Trayload keeps no curated list and offers no one-click downloads. What we build is the shelf itself: a Homebrew tag or category on import, a filter and its own row in the library, and a short "how to add homebrew" tip. Nothing in the app hosts or links to commercial games or unauthorized ROM hacks of them
 - **Computers:** Amiga, C64, DOS, MSX, ZX Spectrum, Apple II
-- **Remaining long-tail consoles:** RetroArch is dropped (see 1.2.0). Sega systems use standalone emulators; the rest are left to community addons (1.5.0)
+- **Remaining long-tail consoles:** RetroArch is dropped (see 1.1.5). Sega systems use standalone emulators; the rest are left to community addons (1.5.0)
 - **Newer experimental systems:** PS5 moving from watch-only to 🧪 once the criteria in PLAN.md are met
 - **Lichii play-from-Trayload (Switch 2, opt-in, 🧪):** deferred until after M13 (release), but ahead of arcade. It can already be installed and launched from the Emulators tab; it loads an extracted ExeFS `main`, not a single game file, so Play needs its own design
 - **Arcade (MAME, FinalBurn Neo, Neo Geo, Neo Geo CD):** pushed far back, last in this phase
@@ -140,8 +150,8 @@ Installer, drag-and-drop import, library with art, launcher with playtime, setup
 - Name: Trayload (name, domain, GitHub and store-page checks came back clean)
 - Licenses: GPL-3.0 for the code, CC BY-NC 4.0 for the music and logo
 - Release plan: see the table at the top. The docs site ships with 1.3.0
-- Built so far: M0-M15 (M15 = first half of 1.2.0) (Switch via Eden, News, music, polish, USB backup, release setup, update notice, soundtrack). Long-tail consoles via RetroArch cores were built in M11 and are removed in 1.2.0. v1.0.0 and v1.1.0 are the release milestones
-- RetroArch is being dropped in 1.2.0
+- Built so far: M0-M15 (M15 shipped as 1.1.5) (Switch via Eden, News, music, polish, USB backup, release setup, update notice, soundtrack). Long-tail consoles via RetroArch cores were built in M11 and are removed in 1.2.0. v1.0.0 and v1.1.0 are the release milestones
+- RetroArch was dropped in 1.1.5
 - Order of deferred items: Lichii play-from-Trayload first, arcade far behind it
 - Homebrew shelf: users do the finding and downloading themselves, no curated list or one-click downloads
 - Music: yes. Your own original soundtrack is built in (v1), and custom music packs are supported (Phase 1)
