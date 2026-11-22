@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest something new for Trayload
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Check `ROADMAP.md` first, your idea may already be planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the problem or the wish, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Trayload to do?
+    validations:
+      required: true
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
+      description: Other apps that do this well, screenshots, or ways you work around it now.

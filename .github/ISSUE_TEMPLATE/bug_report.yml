@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in Trayload does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not attach or link ROMs, BIOS files, firmware or keys. Trayload does not provide them and they are not allowed here.
+  - type: input
+    id: version
+    attributes:
+      label: Trayload version
+      description: Shown at the bottom of the sidebar and on the About page.
+      placeholder: "1.2.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you click or drag, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to repeat it
+      placeholder: |
+        1. Open the Library
+        2. ...
+  - type: input
+    id: system
+    attributes:
+      label: Console and emulator involved
+      description: For example "Nintendo 64 with RMG". Leave empty if it does not apply.
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+  - type: textarea
+    id: log
+    attributes:
+      label: Log (optional)
+      description: The log folder is listed in Settings. Check it for private file paths before pasting.
+      render: text
