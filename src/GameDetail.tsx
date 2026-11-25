@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
-import type { CompatNote, Collection, Game, GameDetails, Membership, System } from "./types";
+import { VERIFY_SYSTEMS } from "./types";
+import type { CompatNote, Collection, Game, GameDetails, Membership, System, Verification, VerifySummary } from "./types";
 import { useCover } from "./useCover";
 import { dateTime, duration, hue, initials } from "./util";
 
@@ -21,6 +22,9 @@ export default function GameDetail({ id, systems, onBack }: Props) {
   const [notes, setNotes] = useState("");
   const [running, setRunning] = useState(false);
   const [tips, setTips] = useState<CompatNote[]>([]);
+  const [check, setCheck] = useState<Verification | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkNote, setCheckNote] = useState("");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
   const cover = useCover(id, game ? game.artPath : null);
@@ -50,6 +54,25 @@ export default function GameDetail({ id, systems, onBack }: Props) {
       .then(setTips)
       .catch(() => setTips([]));
   }, [game?.systemId, game?.title]);
+
+  useEffect(() => {
+    invoke<Verification | null>("get_verification", { gameId: id })
+      .then(setCheck)
+      .catch(() => setCheck(null));
+  }, [id]);
+
+  async function runCheck() {
+    setChecking(true);
+    setCheckNote("");
+    try {
+      const sum = await invoke<VerifySummary>("verify_games", { ids: [id] });
+      setCheck(await invoke<Verification | null>("get_verification", { gameId: id }));
+      if (sum.noList > 0) setCheckNote("Could not get the list for this console. Check your internet connection and try again.");
+    } catch (e) {
+      setCheckNote(String(e));
+    }
+    setChecking(false);
+  }
 
   useEffect(() => {
     load();
@@ -144,6 +167,38 @@ export default function GameDetail({ id, systems, onBack }: Props) {
       )}
 
       <div className="detail-grid">
+        {game && VERIFY_SYSTEMS.includes(game.systemId) && (
+          <section className="section">
+            <h2>File check</h2>
+            {check?.status === "verified" ? (
+              <p>
+                <span className="chip ok">Verified</span> Matches the official release{" "}
+                <strong>{check.name}</strong>.
+              </p>
+            ) : check?.status === "unknown" ? (
+              <p>
+                <span className="chip warn">Not in the list</span>{" "}
+                <span className="muted">
+                  This file is not in the No-Intro list. It may be a hack, a translation, a homebrew game or a bad dump.
+                  Many of these still play fine.
+                </span>
+              </p>
+            ) : check?.status === "unsupported" ? (
+              <p className="muted">This file could not be checked: {check.name}</p>
+            ) : (
+              <p className="muted">
+                Compare this file with the community No-Intro list. Trayload downloads the list for this console from
+                GitHub once, and reads your file on this PC. Nothing about your files is sent anywhere.
+              </p>
+            )}
+            <div className="row">
+              <button className="btn" disabled={checking || game.missing} onClick={() => void runCheck()}>
+                {checking ? "Checking…" : check ? "Check again" : "Check this file"}
+              </button>
+            </div>
+            {checkNote && <p className="error small">{checkNote}</p>}
+          </section>
+        )}
         <section className="section">
           <h2>Collections</h2>
           {collections.length === 0 ? (

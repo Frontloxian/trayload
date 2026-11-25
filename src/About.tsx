@@ -73,6 +73,14 @@ export default function About({ version, registry }: { version: string; registry
       </section>
 
       <section className="section">
+        <h2>Game lists</h2>
+        <p className="muted">
+          The "Check games" feature compares files with No-Intro lists, which Trayload gets from the libretro-database
+          project (licensed CC-BY-SA-4.0). Thank you to No-Intro and the libretro team for keeping them up.
+        </p>
+      </section>
+
+      <section className="section">
         <h2>Music and logo</h2>
         <p className="muted">
           The built-in soundtrack and the Trayload logo are original work, licensed under CC BY-NC 4.0 (see

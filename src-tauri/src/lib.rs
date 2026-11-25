@@ -16,6 +16,7 @@ mod vita;
 mod registry;
 mod remote;
 mod secrets;
+mod verify;
 
 use tauri::{Emitter, Manager};
 
@@ -33,6 +34,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init())
         .manage(games::CopyState::default())
+        .manage(verify::VerifyState::default())
         .manage(installer::Installing::default())
         .manage(library::LastScan::default())
         .manage(launcher::Running::default())
@@ -115,6 +117,9 @@ pub fn run() {
             games::set_games_folder,
             games::open_games_folder,
             games::cancel_copy,
+            verify::verify_games,
+            verify::cancel_verify,
+            verify::get_verification,
             games::get_organize_mode,
             games::set_organize_mode,
             games::plan_organize,

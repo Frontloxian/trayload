@@ -370,3 +370,10 @@ ul.plain {
 .settings-flash:empty { display: none; }
 .settings-pane [hidden] { display: none !important; }
 @media (max-width: 760px) { .settings-layout { flex-direction: column; } .settings-nav { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; } .settings-search { flex-basis: 100%; } }
+
+/* File check chips (M20) */
+.chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 9px; border-radius: 999px; margin-right: 6px; }
+.chip.ok { background: #0f3a2a; color: #6ee7b0; }
+.chip.warn { background: #3f2f0c; color: #f5c04d; }
+.verify-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; margin: 8px 0; }
+.verify-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); }

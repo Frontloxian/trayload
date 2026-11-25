@@ -260,3 +260,26 @@ export interface AppInfo {
   dataFolder: string;
   logFolder: string;
 }
+
+/** Consoles whose games can be checked against the No-Intro lists (see verify.rs). */
+export const VERIFY_SYSTEMS = ["nes", "snes", "gb", "gba", "n64", "nds", "sms", "gg", "sg1000", "genesis", "s32x"];
+
+export interface Verification {
+  status: "verified" | "unknown" | "unsupported";
+  name: string;
+}
+
+export interface VerifySummary {
+  verified: number;
+  unknown: number;
+  unsupported: number;
+  skipped: number;
+  noList: number;
+  cancelled: boolean;
+}
+
+export interface VerifyProgress {
+  done: number;
+  total: number;
+  title: string;
+}

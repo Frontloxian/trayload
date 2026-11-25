@@ -15,6 +15,7 @@ Trayload only talks to these hosts, and only over HTTPS. Redirects to any other 
 | Game covers | `raw.githubusercontent.com` (libretro-thumbnails), and `www.steamgriddb.com` only if you add your own key |
 | Updates to Trayload itself | `github.com` (this project's releases) |
 | Newer emulator list and compatibility notes (optional, on by default, off switch in Settings) | `raw.githubusercontent.com` (two small files from this project's repository) |
+| Checking games against official lists (only when you press a check button) | `raw.githubusercontent.com` (the No-Intro lists in the libretro-database project). Your game files are read and hashed on your PC. Only the list for the console is downloaded; nothing about your files is sent. |
 | Desktop notifications (optional, off by default) | none: they are made on your PC from the update check above |
 
 Each request is a plain download or feed read. A downloaded emulator list is checked before use: it can fix file names and launch options, but it can never point an emulator at a different project or a host that is not on the list above. Like any web request, the host can see your IP address.

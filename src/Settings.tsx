@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import BackupPanel from "./BackupPanel";
 import LegacyCleanup from "./LegacyCleanup";
@@ -16,6 +17,7 @@ import type {
   RemoteStatus,
   RemovedGame,
 } from "./types";
+import type { VerifyProgress, VerifySummary } from "./types";
 import { ensurePermission, notifyEnabled, setNotifyEnabled } from "./notify";
 import type { Music } from "./useMusic";
 import type { AppUpdate } from "./useAppUpdate";
@@ -29,6 +31,10 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     }
   });
   const [query, setQuery] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [vprog, setVprog] = useState<VerifyProgress | null>(null);
+  const [vsum, setVsum] = useState<VerifySummary | null>(null);
+  const [vErr, setVErr] = useState("");
   const [hasKey, setHasKey] = useState(false);
   const [key, setKey] = useState("");
   const [folders, setFolders] = useState<string[]>([]);
@@ -218,6 +224,26 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     });
     if (paneRef.current) paneRef.current.dataset.hits = String(hits);
   });
+  useEffect(() => {
+    const un = listen<VerifyProgress>("verify-progress", (e) => setVprog(e.payload));
+    return () => {
+      void un.then((f) => f());
+    };
+  }, []);
+
+  async function runVerify() {
+    setVerifying(true);
+    setVsum(null);
+    setVErr("");
+    setVprog(null);
+    try {
+      setVsum(await invoke<VerifySummary>("verify_games", { ids: null }));
+    } catch (err) {
+      setVErr(String(err));
+    }
+    setVerifying(false);
+  }
+
   function pickTab(id: string) {
     setTab(id);
     setQuery("");
@@ -461,6 +487,48 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
           )}
         </div>
         {orgNote && <p className={orgNote.bad ? "error small" : "muted small"}>{orgNote.text}</p>}
+      </section>
+
+      <section className="section" data-group="games">
+        <h2>Check games against official lists</h2>
+        <p className="muted">
+          Compares your cartridge games (NES, SNES, Game Boy, Game Boy Advance, Nintendo 64, DS and Sega 8 and 16-bit
+          consoles) with the community No-Intro lists, so you can tell a clean dump from a hack or a bad file. Trayload
+          downloads the list for each console from GitHub (libretro-database) the first time, keeps it for 30 days, and
+          reads your files on this PC. Nothing about your files is sent anywhere. Results show on each game's page.
+        </p>
+        <div className="row wrap">
+          <button className="btn" disabled={verifying} onClick={() => void runVerify()}>
+            {verifying ? "Checking…" : "Check my games"}
+          </button>
+          {verifying && (
+            <button className="btn" onClick={() => void invoke("cancel_verify")}>
+              Cancel
+            </button>
+          )}
+        </div>
+        {verifying && vprog && vprog.total > 0 && (
+          <>
+            <div className="verify-bar" aria-hidden="true">
+              <span style={{ width: `${Math.round((vprog.done / vprog.total) * 100)}%` }} />
+            </div>
+            <p className="muted small" aria-live="polite">
+              {vprog.done} of {vprog.total}
+              {vprog.title ? ` · ${vprog.title}` : ""}
+            </p>
+          </>
+        )}
+        {vErr && <p className="error small">{vErr}</p>}
+        {vsum && (
+          <p className="muted" aria-live="polite">
+            {vsum.cancelled ? "Stopped. " : "Done. "}
+            {vsum.verified} verified, {vsum.unknown} not in the list
+            {vsum.unsupported ? `, ${vsum.unsupported} could not be checked` : ""}
+            {vsum.skipped ? `, ${vsum.skipped} already verified` : ""}.
+            {vsum.noList > 0 &&
+              ` ${vsum.noList} game${vsum.noList === 1 ? "" : "s"} skipped because the list could not be downloaded. Check your internet connection and try again.`}
+          </p>
+        )}
       </section>
 
       <section className="section" data-group="games">

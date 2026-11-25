@@ -71,6 +71,14 @@ CREATE TABLE IF NOT EXISTS file_origins (
   original TEXT NOT NULL,
   moved INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS game_verify (
+  game_id INTEGER PRIMARY KEY,
+  status TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  size INTEGER NOT NULL,
+  mtime INTEGER NOT NULL,
+  checked_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS ignored_files (
   path TEXT PRIMARY KEY
 );

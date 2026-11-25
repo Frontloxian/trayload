@@ -6,6 +6,7 @@ Each release's notes are shown inside Trayload (after updating, and under Settin
 
 ### New
 - **Easier Settings:** the page is split into sections (Games, Artwork and music, Updates, Backup, Advanced) in a list on the left, with a search box that finds a setting by name. Messages stay visible at the top while you scroll. Rarely used items are under Advanced. No setting changed or was removed.
+- **Check your games (cartridge consoles):** a "Check my games" button in Settings > Games, and a "File check" box on each game's page, compare your NES, SNES, Game Boy, Game Boy Advance, Nintendo 64, DS and Sega cartridge games with the community No-Intro lists. A game shows as "Verified" with its official name, or "Not in the list" (a hack, translation, homebrew game or bad dump). The list for each console is downloaded from GitHub only when you run a check and is kept for 30 days. Your files are read on your PC and nothing about them is sent anywhere.
 
 ## 1.3.0
 
