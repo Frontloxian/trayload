@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Dialog } from "./Overlays";
 import { VERIFY_SYSTEMS } from "./types";
+import { siblingsOf } from "./versions";
 import type { CompatNote, Collection, CoverCandidate, Game, GameDetails, GameInfo, Membership, System, Verification, VerifySummary } from "./types";
 import { useCover } from "./useCover";
 import { dateTime, duration, hue, initials } from "./util";
@@ -12,10 +13,12 @@ interface Props {
   id: number;
   systems: System[];
   onBack: () => void;
+  onOpenGame?: (id: number) => void;
 }
 
-export default function GameDetail({ id, systems, onBack }: Props) {
+export default function GameDetail({ id, systems, onBack, onOpenGame }: Props) {
   const [game, setGame] = useState<Game | null>(null);
+  const [others, setOthers] = useState<Game[]>([]);
   const [details, setDetails] = useState<GameDetails | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [members, setMembers] = useState<Membership[]>([]);
@@ -35,7 +38,11 @@ export default function GameDetail({ id, systems, onBack }: Props) {
   const load = useCallback(() => {
     const fail = (e: unknown) => setError(String(e));
     invoke<Game[]>("list_games")
-      .then((all) => setGame(all.find((g) => g.id === id) ?? null))
+      .then((all) => {
+        const me = all.find((g) => g.id === id) ?? null;
+        setGame(me);
+        setOthers(me ? siblingsOf(me, all) : []);
+      })
       .catch(fail);
     invoke<GameDetails>("get_game_details", { id }).then(setDetails).catch(fail);
     invoke<Collection[]>("list_collections").then(setCollections).catch(fail);
@@ -189,29 +196,46 @@ export default function GameDetail({ id, systems, onBack }: Props) {
         </p>
       )}
 
+      {others.length > 0 && onOpenGame && (
+        <section className="section">
+          <h2>Other versions</h2>
+          <p className="muted small">The same game in other regions or revisions in your library.</p>
+          <ul className="plain">
+            {others.map((o) => (
+              <li key={o.id}>
+                <button className="link" onClick={() => onOpenGame(o.id)}>
+                  {o.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="detail-grid">
         {game && VERIFY_SYSTEMS.includes(game.systemId) && (
           <section className="section">
             <h2>File check and game info</h2>
             {check?.status === "verified" ? (
               <p>
-                <span className="chip ok">Verified</span> Matches the official release{" "}
+                <span className="vchip ok">Verified</span> Matches the official release{" "}
                 <strong>{check.name}</strong>.
               </p>
             ) : check?.status === "unknown" ? (
               <p>
-                <span className="chip warn">Not in the list</span>{" "}
+                <span className="vchip warn">Not in the list</span>{" "}
                 <span className="muted">
-                  This file is not in the No-Intro list. It may be a hack, a translation, a homebrew game or a bad dump.
-                  Many of these still play fine.
+                  This file is not in the list. It may be a hack, a translation, a homebrew game or a bad dump, or a disc
+                  that was merged into one file or converted. Many of these still play fine.
                 </span>
               </p>
             ) : check?.status === "unsupported" ? (
               <p className="muted">This file could not be checked: {check.name}</p>
             ) : (
               <p className="muted">
-                Compare this file with the community No-Intro list. Trayload downloads the list for this console from
-                GitHub once, and reads your file on this PC. Nothing about your files is sent anywhere.
+                Compare this game with the community lists (No-Intro for cartridges, Redump for discs). Trayload downloads
+                the list for this console from GitHub once, and reads your file on this PC. Nothing about your files is
+                sent anywhere.
               </p>
             )}
             {info && (

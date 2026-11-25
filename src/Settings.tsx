@@ -31,6 +31,22 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     }
   });
   const [query, setQuery] = useState("");
+  const [grouped, setGrouped] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("trayload.groupVersions") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  function toggleGrouped(on: boolean) {
+    setGrouped(on);
+    try {
+      localStorage.setItem("trayload.groupVersions", on ? "1" : "0");
+    } catch {
+      /* fine without it */
+    }
+    window.dispatchEvent(new Event("trayload-grouping"));
+  }
   const [verifying, setVerifying] = useState(false);
   const [vprog, setVprog] = useState<VerifyProgress | null>(null);
   const [vsum, setVsum] = useState<VerifySummary | null>(null);
@@ -508,10 +524,11 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
       <section className="section" data-group="games">
         <h2>Check games against official lists</h2>
         <p className="muted">
-          Compares your cartridge games (NES, SNES, Game Boy, Game Boy Advance, Nintendo 64, DS and Sega 8 and 16-bit
-          consoles) with the community No-Intro lists, so you can tell a clean dump from a hack or a bad file. Trayload
-          downloads the list for each console from GitHub (libretro-database) the first time, keeps it for 30 days, and
-          reads your files on this PC. Nothing about your files is sent anywhere. Results show on each game's page.
+          Compares your games with the community lists: No-Intro for cartridges (NES, SNES, Game Boy, Game Boy Advance,
+          Nintendo 64, DS, Sega 8 and 16-bit) and Redump for discs (PlayStation, PS2, PSP, GameCube, Wii, Dreamcast,
+          Saturn, Sega CD, Xbox), so you can tell a clean dump from a hack or a bad file. Disc images in .chd, .rvz and
+          similar compressed formats can't be checked. Trayload downloads the list for each console from GitHub
+          (libretro-database) the first time, keeps it for 30 days, and reads your files on this PC. Nothing about your files is sent anywhere. Results show on each game's page.
         </p>
         <div className="row wrap">
           <button className="btn" disabled={verifying} onClick={() => void runVerify()}>
@@ -548,6 +565,19 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
               ` ${vsum.noList} game${vsum.noList === 1 ? "" : "s"} skipped because the list could not be downloaded. Check your internet connection and try again.`}
           </p>
         )}
+      </section>
+
+      <section className="section" data-group="games">
+        <h2>Regions and versions</h2>
+        <label>
+          <input type="checkbox" checked={grouped} onChange={(e) => toggleGrouped(e.target.checked)} /> Show the regions
+          and versions of a game as one tile in the Library
+        </label>
+        <p className="muted small">
+          For example "Tetris (USA)" and "Tetris (Japan)" become one tile, with the others listed on the game's page.
+          Your favorite or most played version is shown, otherwise USA, then World, then Europe. Games are matched by
+          name, so it works best after "Use official names". Lists that follow your play history always show every game.
+        </p>
       </section>
 
       <section className="section" data-group="games">

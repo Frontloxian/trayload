@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import GameTile from "./GameTile";
+import { groupVersions } from "./versions";
 import type { Collection, Game, Membership, ScanSummary, System, Unassigned } from "./types";
 
 type SortKey = "title" | "added" | "played" | "time";
@@ -45,6 +46,19 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
   const [summary, setSummary] = useState("");
   const [query, setQuery] = useState("");
   const [view, setView] = useState("all");
+  const readGrouped = () => {
+    try {
+      return localStorage.getItem("trayload.groupVersions") !== "0";
+    } catch {
+      return true;
+    }
+  };
+  const [grouped, setGrouped] = useState<boolean>(readGrouped);
+  useEffect(() => {
+    const on = () => setGrouped(readGrouped());
+    window.addEventListener("trayload-grouping", on);
+    return () => window.removeEventListener("trayload-grouping", on);
+  }, []);
   const [sort, setSort] = useState<SortKey>("title");
   const [busy, setBusy] = useState(false);
   const [review, setReview] = useState(false);
@@ -205,6 +219,12 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
     const sorted = [...list].sort(COMPARE[key]);
     return view === "recent" || view === "added" ? sorted.slice(0, 40) : sorted;
   }, [games, view, query, sort, memberSets]);
+
+  // Regions and revisions of one game share a tile, except in the lists that follow play history.
+  const tiles = useMemo(
+    () => (grouped && !fixedOrder ? groupVersions(shown) : shown.map((g) => ({ game: g, versions: 1 }))),
+    [grouped, fixedOrder, shown],
+  );
 
   const emptyText =
     view === "fav"
@@ -393,7 +413,7 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
                 )
               ) : (
                 <span className="muted small">
-                  {shown.length} game{shown.length === 1 ? "" : "s"}
+                  {tiles.length} game{tiles.length === 1 ? "" : "s"}
                 </span>
               )}
               <span className="spacer" />
@@ -415,9 +435,10 @@ export default function Library({ systems, refreshKey, onOpen }: Props) {
               <p className="muted">{emptyText}</p>
             ) : (
               <ul className="grid">
-                {shown.map((g) => (
+                {tiles.map(({ game: g, versions }) => (
                   <GameTile
                     key={g.id}
+                    versions={versions}
                     game={g}
                     systemName={names[g.systemId] ?? g.systemId}
                     running={running.has(g.id)}

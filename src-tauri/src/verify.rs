@@ -42,6 +42,30 @@ struct Console {
     developer: HashMap<u32, String>,
     publisher: HashMap<u32, String>,
     year: HashMap<u32, String>,
+    discs: Discs,
+}
+
+/// A Redump list: each game is a set of track files, so a disc matches when all its tracks do.
+#[derive(Default)]
+struct Discs {
+    names: Vec<String>,
+    by_hash: HashMap<(u32, u64), Vec<u32>>,
+}
+
+/// The Redump lists that cover each disc console (file names in libretro-database, without ".dat").
+fn disc_lists_for(system: &str) -> &'static [&'static str] {
+    match system {
+        "ps1" => &["Sony - PlayStation"],
+        "ps2" => &["Sony - PlayStation 2"],
+        "psp" => &["Sony - PlayStation Portable"],
+        "gc" => &["Nintendo - GameCube"],
+        "wii" => &["Nintendo - Wii"],
+        "dc" => &["Sega - Dreamcast"],
+        "saturn" => &["Sega - Saturn"],
+        "segacd" => &["Sega - Mega-CD - Sega CD"],
+        "xbox" => &["Microsoft - Xbox"],
+        _ => &[],
+    }
 }
 
 fn e<T: ToString>(x: T) -> String {
@@ -71,16 +95,22 @@ fn lists_for(system: &str) -> &'static [&'static str] {
 
 // ---------- checksums ----------
 
-fn table() -> &'static [u32; 256] {
-    static T: OnceLock<[u32; 256]> = OnceLock::new();
+fn table() -> &'static [[u32; 256]; 8] {
+    static T: OnceLock<[[u32; 256]; 8]> = OnceLock::new();
     T.get_or_init(|| {
-        let mut t = [0u32; 256];
-        for (i, slot) in t.iter_mut().enumerate() {
+        let mut t = [[0u32; 256]; 8];
+        for i in 0..256usize {
             let mut c = i as u32;
             for _ in 0..8 {
                 c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
             }
-            *slot = c;
+            t[0][i] = c;
+        }
+        for i in 0..256usize {
+            for k in 1..8usize {
+                let prev = t[k - 1][i];
+                t[k][i] = (prev >> 8) ^ t[0][(prev & 0xFF) as usize];
+            }
         }
         t
     })
@@ -91,11 +121,26 @@ impl Crc {
     fn new() -> Crc {
         Crc(0xFFFF_FFFF)
     }
+    /// Eight bytes at a time, so a whole disc image takes seconds, not minutes.
     fn update(&mut self, data: &[u8]) {
         let t = table();
-        for &b in data {
-            self.0 = t[((self.0 ^ b as u32) & 0xFF) as usize] ^ (self.0 >> 8);
+        let mut c = self.0;
+        let mut chunks = data.chunks_exact(8);
+        for ch in &mut chunks {
+            let a = c ^ u32::from_le_bytes([ch[0], ch[1], ch[2], ch[3]]);
+            c = t[7][(a & 0xFF) as usize]
+                ^ t[6][((a >> 8) & 0xFF) as usize]
+                ^ t[5][((a >> 16) & 0xFF) as usize]
+                ^ t[4][(a >> 24) as usize]
+                ^ t[3][ch[4] as usize]
+                ^ t[2][ch[5] as usize]
+                ^ t[1][ch[6] as usize]
+                ^ t[0][ch[7] as usize];
         }
+        for &b in chunks.remainder() {
+            c = t[0][((c ^ b as u32) & 0xFF) as usize] ^ (c >> 8);
+        }
+        self.0 = c;
     }
     fn finish(&self) -> u32 {
         !self.0
@@ -307,6 +352,84 @@ fn parse_meta(text: &str, key: &str, into: &mut HashMap<u32, String>) {
     }
 }
 
+fn parse_disc_list(text: &str, into: &mut Discs) {
+    let mut current: Option<u32> = None;
+    for raw in text.lines() {
+        let line = raw.trim();
+        if line.starts_with("game (") || line.starts_with("machine (") {
+            current = None;
+        } else if line.starts_with("name ") && current.is_none() {
+            if let Some(n) = tokens(line).get(1) {
+                into.names.push(n.clone());
+                current = Some(into.names.len() as u32 - 1);
+            }
+        } else if line.starts_with("rom (") {
+            let Some(idx) = current else { continue };
+            let t = tokens(line);
+            let find = |key: &str| t.iter().position(|w| w == key).and_then(|i| t.get(i + 1));
+            let (Some(size), Some(crc)) = (find("size"), find("crc")) else {
+                continue;
+            };
+            if let (Ok(size), Ok(crc)) = (size.parse::<u64>(), u32::from_str_radix(crc, 16)) {
+                let v = into.by_hash.entry((crc, size)).or_default();
+                if !v.contains(&idx) {
+                    v.push(idx);
+                }
+            }
+        }
+    }
+}
+
+/// The official name of the disc whose tracks are all these, if there is one.
+fn match_disc(tracks: &[(u32, u64)], discs: &Discs) -> Option<String> {
+    let mut common: Option<Vec<u32>> = None;
+    for t in tracks {
+        let hits = discs.by_hash.get(t)?;
+        common = Some(match common {
+            None => hits.clone(),
+            Some(c) => c.into_iter().filter(|i| hits.contains(i)).collect(),
+        });
+    }
+    let idx = *common?.first()?;
+    discs.names.get(idx as usize).cloned()
+}
+
+/// The files that make up a disc image, or why it can't be checked.
+fn disc_files(path: &Path) -> Result<Vec<PathBuf>, String> {
+    let ext = path
+        .extension()
+        .map(|x| x.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    match ext.as_str() {
+        "cue" | "gdi" => {
+            let files = crate::library::sheet_tracks(path);
+            if files.is_empty() {
+                return Err("The sheet does not name any track files.".into());
+            }
+            if let Some(m) = files.iter().find(|f| !f.is_file()) {
+                return Err(format!(
+                    "A track file is missing: {}",
+                    m.file_name().unwrap_or_default().to_string_lossy()
+                ));
+            }
+            Ok(files)
+        }
+        "iso" | "bin" | "img" => Ok(vec![path.to_path_buf()]),
+        _ => Err("Compressed and special disc formats (.chd, .rvz, .pbp, .cso and similar) can't be checked.".into()),
+    }
+}
+
+fn hash_disc(path: &Path, cancel: &AtomicBool) -> Result<Option<Vec<(u32, u64)>>, String> {
+    let mut out = Vec::new();
+    for f in disc_files(path)? {
+        match hash_game(&f, "disc", cancel)? {
+            Hashed::Cancelled => return Ok(None),
+            Hashed::Done(h) => out.push(h[0]),
+        }
+    }
+    Ok(Some(out))
+}
+
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -344,7 +467,8 @@ async fn get_list(dir: &Path, sub: &str, name: &str) -> Result<String, String> {
         .and_then(|t| SystemTime::now().duration_since(t).ok())
         .map(|d| d.as_secs());
     if let (Some(a), Ok(text)) = (age, fs::read_to_string(&file)) {
-        if a < MAX_AGE_SECS {
+        // A list that was not there (empty copy) is asked about again after a day.
+        if a < MAX_AGE_SECS && (!text.is_empty() || a < 86_400) {
             return Ok(text);
         }
     }
@@ -481,7 +605,7 @@ pub async fn verify_games(
             .map_err(e)?;
         let list: Vec<Job> = rows
             .filter_map(Result::ok)
-            .filter(|j| !lists_for(&j.system).is_empty())
+            .filter(|j| !lists_for(&j.system).is_empty() || !disc_lists_for(&j.system).is_empty())
             .filter(|j| ids.as_ref().map_or(true, |v| v.contains(&j.id)))
             .collect();
         list
@@ -518,7 +642,16 @@ pub async fn verify_games(
                 }
             }
         }
-        if ok && !con.names.is_empty() {
+        for name in disc_lists_for(sys) {
+            match get_list(&dir, "redump", name).await {
+                Ok(text) => parse_disc_list(&text, &mut con.discs),
+                Err(err) => {
+                    applog!("[verify] could not get the disc list \"{name}\": {err}");
+                    ok = false;
+                }
+            }
+        }
+        if ok && (!con.names.is_empty() || !con.discs.names.is_empty()) {
             lookups.insert(sys.clone(), Arc::new(con));
         }
     }
@@ -568,7 +701,22 @@ fn run(
             .extension()
             .map(|x| x.to_string_lossy().to_lowercase())
             .unwrap_or_default();
-        let (status, name) = if job.system == "genesis" && ext == "smd" {
+        let (status, name) = if !disc_lists_for(&job.system).is_empty() {
+            match hash_disc(&job.path, cancel) {
+                Ok(None) => {
+                    sum.cancelled = true;
+                    break;
+                }
+                Ok(Some(tracks)) => match match_disc(&tracks, &lookup.discs) {
+                    Some(n) => {
+                        save_info(db, job.id, lookup, 0);
+                        ("verified", n)
+                    }
+                    None => ("unknown", String::new()),
+                },
+                Err(err) => ("unsupported", err),
+            }
+        } else if job.system == "genesis" && ext == "smd" {
             ("unsupported", "Interleaved .smd files can't be checked.".to_string())
         } else {
             match hash_game(&job.path, &job.system, cancel) {
@@ -752,6 +900,41 @@ mod tests {
             Some("Tetris (World) (Rev 1)")
         );
         assert_eq!(m.len(), 1);
+    }
+
+    #[test]
+    fn fast_checksum_agrees_with_the_plain_one() {
+        let data: Vec<u8> = (0..5003u32).map(|i| (i.wrapping_mul(2654435761) >> 13) as u8).collect();
+        let mut plain = 0xFFFF_FFFFu32;
+        for &b in &data {
+            plain ^= b as u32;
+            for _ in 0..8 {
+                plain = if plain & 1 != 0 {
+                    0xEDB8_8320 ^ (plain >> 1)
+                } else {
+                    plain >> 1
+                };
+            }
+        }
+        assert_eq!(crc_of(&data), !plain);
+    }
+
+    #[test]
+    fn a_disc_matches_when_every_track_matches_one_game() {
+        let text = "game (\n\tname \"Game A (USA)\"\n\trom ( name \"A (Track 1).bin\" size 100 crc 00000001 )\n\trom ( name \"A (Track 2).bin\" size 50 crc 00000002 )\n)\ngame (\n\tname \"Game B (Europe)\"\n\trom ( name \"B (Track 1).bin\" size 100 crc 00000003 )\n\trom ( name \"B (Track 2).bin\" size 50 crc 00000002 )\n)\n";
+        let mut d = Discs::default();
+        parse_disc_list(text, &mut d);
+        assert_eq!(match_disc(&[(1, 100), (2, 50)], &d).as_deref(), Some("Game A (USA)"));
+        assert_eq!(match_disc(&[(3, 100), (2, 50)], &d).as_deref(), Some("Game B (Europe)"));
+        // Track 2 is shared, but track 1 of A with track 2 of nothing else must not match B.
+        assert_eq!(match_disc(&[(1, 100), (9, 9)], &d), None);
+        assert_eq!(match_disc(&[(1, 100), (3, 100)], &d), None);
+    }
+
+    #[test]
+    fn disc_consoles_have_lists() {
+        assert!(!disc_lists_for("ps1").is_empty());
+        assert!(disc_lists_for("nes").is_empty());
     }
 
     #[test]

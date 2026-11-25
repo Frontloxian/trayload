@@ -10,9 +10,10 @@ interface Props {
   onOpen: () => void;
   onFavorite: () => void;
   onRemove?: () => void;
+  versions?: number;
 }
 
-export default function GameTile({ game: g, systemName, running, onPlay, onOpen, onFavorite, onRemove }: Props) {
+export default function GameTile({ game: g, systemName, running, onPlay, onOpen, onFavorite, onRemove, versions = 1 }: Props) {
   const cover = useCover(g.id, g.artPath);
   const h = hue(g.title);
   const time = playtime(g.totalPlaytimeSec);
@@ -51,6 +52,7 @@ export default function GameTile({ game: g, systemName, running, onPlay, onOpen,
       <div className="muted small">
         {systemName}
         {time && ` · ${time}`}
+        {versions > 1 && ` · ${versions} versions`}
       </div>
     </li>
   );

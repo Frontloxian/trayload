@@ -261,8 +261,8 @@ export interface AppInfo {
   logFolder: string;
 }
 
-/** Consoles whose games can be checked against the No-Intro lists (see verify.rs). */
-export const VERIFY_SYSTEMS = ["nes", "snes", "gb", "gba", "n64", "nds", "sms", "gg", "sg1000", "genesis", "s32x"];
+/** Consoles whose games can be checked against the No-Intro and Redump lists (see verify.rs). */
+export const VERIFY_SYSTEMS = ["nes", "snes", "gb", "gba", "n64", "nds", "sms", "gg", "sg1000", "genesis", "s32x", "ps1", "ps2", "psp", "gc", "wii", "dc", "saturn", "segacd", "xbox"];
 
 export interface Verification {
   status: "verified" | "unknown" | "unsupported";

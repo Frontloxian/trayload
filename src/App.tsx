@@ -350,6 +350,7 @@ export default function App() {
               <GameDetail
                 id={detailId}
                 systems={allSystems}
+                onOpenGame={setDetailId}
                 onBack={() => {
                   setDetailId(null);
                   setLibKey((k) => k + 1);

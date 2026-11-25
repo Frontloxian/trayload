@@ -10,6 +10,8 @@ Each release's notes are shown inside Trayload (after updating, and under Settin
 - **Game info:** for verified games the page also shows release year, developer, publisher and genre, from the same libretro-database project. Not every game has every item.
 - **Find covers online:** a button on the game page shows the box art, title screen and in-game pictures from libretro-thumbnails (including other regions) so you can pick the right one.
 - **Official names:** verified games can take their official name, one at a time or all at once from Settings. Only the name shown in Trayload changes, never your files. Covers that were missing are looked for again under the new name.
+- **Disc checks:** the same check now works for PlayStation, PS2, PSP, GameCube, Wii, Dreamcast, Saturn, Sega CD and Xbox discs, against the community Redump lists. It reads `.iso` files and `.cue` or `.gdi` sheets with their track files. Compressed formats (`.chd`, `.rvz`, `.pbp`, `.cso`) can't be checked.
+- **Regions and versions in one tile:** "Tetris (USA)" and "Tetris (Japan)" show as one tile in the Library, with the other versions listed on the game's page. It can be turned off in Settings > Games.
 
 ## 1.3.0
 

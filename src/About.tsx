@@ -75,8 +75,8 @@ export default function About({ version, registry }: { version: string; registry
       <section className="section">
         <h2>Game lists</h2>
         <p className="muted">
-          The "Check games" feature compares files with No-Intro lists and adds year, developer and genre, which Trayload gets from the libretro-database
-          project (licensed CC-BY-SA-4.0). Thank you to No-Intro and the libretro team for keeping them up.
+          The "Check games" feature compares files with No-Intro (cartridges) and Redump (discs) lists and adds year, developer and genre, which Trayload gets from the libretro-database
+          project (licensed CC-BY-SA-4.0). Thank you to No-Intro, Redump and the libretro team for keeping them up.
         </p>
       </section>
 

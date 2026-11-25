@@ -12,6 +12,8 @@ The install steps and the "no ROMs or BIOS" notice are added automatically below
 - **Game info.** Verified games show release year, developer, publisher and genre.
 - **Pick your cover.** "Find covers online" shows box art, title screens and in-game pictures, including other regions.
 - **Official names.** Verified games can use their official name. Files are never renamed.
+- **Disc checks.** PlayStation, PS2, PSP, GameCube, Wii, Dreamcast, Saturn, Sega CD and Xbox discs can be checked against the Redump lists. Compressed formats (.chd, .rvz) can't.
+- **Versions in one tile.** Regions and revisions of a game share a tile in the Library. Can be turned off.
 
 ## 1.3.0
 
