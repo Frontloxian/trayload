@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
-import type { Collection, Game, GameDetails, Membership, System } from "./types";
+import type { CompatNote, Collection, Game, GameDetails, Membership, System } from "./types";
 import { useCover } from "./useCover";
 import { dateTime, duration, hue, initials } from "./util";
 
@@ -20,6 +20,7 @@ export default function GameDetail({ id, systems, onBack }: Props) {
   const [extra, setExtra] = useState("");
   const [notes, setNotes] = useState("");
   const [running, setRunning] = useState(false);
+  const [tips, setTips] = useState<CompatNote[]>([]);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
   const cover = useCover(id, game ? game.artPath : null);
@@ -42,6 +43,13 @@ export default function GameDetail({ id, systems, onBack }: Props) {
     });
     invoke<number[]>("running_games").then((ids) => setRunning(ids.includes(id)));
   }, [id]);
+
+  useEffect(() => {
+    if (!game) return;
+    invoke<CompatNote[]>("get_compat_notes", { systemId: game.systemId, title: game.title })
+      .then(setTips)
+      .catch(() => setTips([]));
+  }, [game?.systemId, game?.title]);
 
   useEffect(() => {
     load();
@@ -176,6 +184,21 @@ export default function GameDetail({ id, systems, onBack }: Props) {
             value={extra}
             onChange={(e) => setExtra(e.target.value)}
           />
+          {tips.length > 0 && (
+            <div className="tips">
+              <h3>Compatibility notes</h3>
+              {tips.map((t, i) => (
+                <p key={i} className="muted">
+                  {t.note}{" "}
+                  {t.link && (
+                    <button className="link" onClick={() => invoke("open_about_link", { url: t.link }).catch(() => {})}>
+                      Source
+                    </button>
+                  )}
+                </p>
+              ))}
+            </div>
+          )}
           <label className="field">
             Notes
             <textarea

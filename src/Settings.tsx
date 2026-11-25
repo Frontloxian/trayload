@@ -13,8 +13,10 @@ import type {
   LeftoverOriginal,
   OrganizeCandidate,
   OrganizeSummary,
+  RemoteStatus,
   RemovedGame,
 } from "./types";
+import { ensurePermission, notifyEnabled, setNotifyEnabled } from "./notify";
 import type { Music } from "./useMusic";
 import type { AppUpdate } from "./useAppUpdate";
 
@@ -27,6 +29,16 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
   const [gamesFolder, setGamesFolder] = useState<GamesFolder | null>(null);
   const [ignored, setIgnored] = useState<string[]>([]);
   const [legacy, setLegacy] = useState<LegacyStatus | null>(null);
+  const [online, setOnline] = useState(() => {
+    try {
+      return localStorage.getItem("trayload.checkRegistry") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const [notify, setNotify] = useState(notifyEnabled);
+  const [remote, setRemote] = useState<RemoteStatus | null>(null);
+  const [remoteNote, setRemoteNote] = useState("");
   const [mode, setMode] = useState<"copy" | "move">("copy");
   // Feedback for the "bring existing games in" button, shown right under it (the top of the page may be out of view).
   const [orgNote, setOrgNote] = useState<{ text: string; bad: boolean } | null>(null);
@@ -52,8 +64,35 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     invoke<GamesFolder>("get_games_folder").then(setGamesFolder).catch(() => {});
     invoke<string[]>("list_ignored_files").then(setIgnored).catch(() => {});
     invoke<LegacyStatus>("legacy_status").then(setLegacy).catch(() => {});
+    invoke<RemoteStatus>("remote_status").then(setRemote).catch(() => {});
     invoke<string>("get_organize_mode").then((m) => setMode(m === "move" ? "move" : "copy")).catch(() => {});
   }, []);
+
+  async function checkNow() {
+    setRemoteNote("Checking…");
+    try {
+      const s = await invoke<RemoteStatus>("refresh_remote");
+      setRemote(s);
+      setRemoteNote(
+        !s.online
+          ? "Could not reach GitHub. Trayload keeps using the list it has."
+          : s.registryUpdated || s.compatUpdated
+            ? "Updated. Restart Trayload to be sure everything uses the new list."
+            : "You already have the newest list.",
+      );
+    } catch (e) {
+      setRemoteNote(String(e));
+    }
+  }
+
+  async function toggleNotify(on: boolean) {
+    if (on && !(await ensurePermission())) {
+      setRemoteNote("Windows did not allow notifications for Trayload. Check Settings > System > Notifications.");
+      return;
+    }
+    setNotify(on);
+    setNotifyEnabled(on);
+  }
 
   async function chooseMode(m: "copy" | "move") {
     setMode(m);
@@ -424,6 +463,45 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         )}
         {appUpdate.state === "installing" && <p className="muted">Downloading and installing…</p>}
         {appUpdate.state === "error" && <p className="error">Could not check for updates: {appUpdate.error}</p>}
+      </section>
+
+      <section className="section">
+        <h2>Online updates</h2>
+        <p className="muted">
+          Trayload can fetch a newer emulator list (download names and launch options) and compatibility notes from its
+          own GitHub page, so a broken download can be fixed without a new app version. It is a plain download of a
+          public file: nothing about you is sent. A downloaded list can never point an emulator at a different project.
+        </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={online}
+            onChange={(e) => {
+              setOnline(e.target.checked);
+              try {
+                localStorage.setItem("trayload.checkRegistry", e.target.checked ? "1" : "0");
+              } catch {
+                /* remembering is optional */
+              }
+            }}
+          />{" "}
+          Check for emulator list updates when Trayload starts
+        </label>
+        <div className="row wrap">
+          <button className="btn" onClick={() => void checkNow()}>
+            Check now
+          </button>
+          {remote && (
+            <span className="muted small">
+              Emulator list version {remote.registryRevision}, compatibility notes version {remote.compatRevision}
+            </span>
+          )}
+        </div>
+        {remoteNote && <p className="muted small">{remoteNote}</p>}
+        <label>
+          <input type="checkbox" checked={notify} onChange={(e) => void toggleNotify(e.target.checked)} />{" "}
+          Show a desktop notification when an emulator update is ready (only while Trayload is open)
+        </label>
       </section>
 
       <section className="section">

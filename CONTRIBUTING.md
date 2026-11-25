@@ -40,3 +40,13 @@ npm run tauri dev
 5. Describe what you changed and how you tried it.
 
 Changes to the emulator list (`emulators.json`) should say where the download comes from and how you checked the file names and launch options.
+
+## Fixing a broken emulator download
+
+Emulator downloads are described in `src-tauri/resources/emulators.json`. If an emulator renames its download file, edit that entry's `assetPattern` (and `exePattern` if the program name changed), then **raise `revision` at the top of the file by one**. Once the change is on the `main` branch, Trayloads that have online updates turned on pick it up without a new release.
+
+An online update can fix patterns and launch options only. It can not point an emulator at a different project, so adding a new emulator, or changing where one comes from, always needs a normal app release.
+
+## Compatibility notes
+
+Per-game tips live in `src-tauri/resources/compat.json`. Every note needs a system id, one or two sentences, and a GitHub link showing where the tip comes from. Raise `revision` when you add one.

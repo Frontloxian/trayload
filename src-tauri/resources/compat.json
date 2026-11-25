@@ -1,0 +1,5 @@
+{
+  "_note": "Per-game compatibility notes. Each note needs a system id, a short note, and a link to where the tip comes from (a GitHub issue, wiki page or release note). 'title' is optional: when present, the note applies to games whose title contains it (not case-sensitive).",
+  "revision": 1,
+  "notes": []
+}

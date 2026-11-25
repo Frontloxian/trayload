@@ -110,7 +110,7 @@ fn host_ok(host: &str) -> bool {
     ALLOWED_HOSTS.contains(&host)
 }
 
-fn check_host(url: &str) -> Result<(), String> {
+pub(crate) fn check_host(url: &str) -> Result<(), String> {
     let u = reqwest::Url::parse(url).map_err(|e| format!("bad URL {url}: {e}"))?;
     if u.scheme() != "https" {
         return Err(format!("refusing non-HTTPS URL: {url}"));

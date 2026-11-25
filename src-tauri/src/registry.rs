@@ -1,7 +1,10 @@
 //! Emulator registry: data, not code.
-//! Loads `emulators.json`. A copy is embedded in the binary; if a file named
-//! `registry.json` exists in the app's local data folder it wins, so the list
-//! can be updated later without shipping a new app version.
+//! Loads `emulators.json`. A copy is embedded in the binary. Newer copies win, in this order:
+//! 1. `registry.json` in the app's local data folder (for people who edit it by hand),
+//! 2. `registry.remote.json`, saved by remote.rs from the project's GitHub page, but only if its
+//!    `revision` is higher than the embedded one and it passes every check below.
+//! A downloaded list can fix patterns and launch options. It can never point an emulator at a
+//! different project: sources must match the ones built into this version of Trayload.
 
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -120,6 +123,9 @@ pub struct Retired {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Registry {
+    /// Goes up with every edit, so the newest copy can be told apart.
+    #[serde(default)]
+    pub revision: u32,
     pub systems: Vec<System>,
     #[serde(default)]
     pub retired: Vec<Retired>,
@@ -127,6 +133,129 @@ pub struct Registry {
 
 fn parse(text: &str) -> Result<Registry, String> {
     serde_json::from_str(text).map_err(|e| format!("registry parse error: {e}"))
+}
+
+/// Where a system's emulator comes from, without the parts that may change (asset patterns, file names).
+fn origin(s: &Source) -> String {
+    match s {
+        Source::Github { repo, .. } => format!("github:{}", repo.to_lowercase()),
+        Source::Forgejo { host, repo, .. } => format!("forgejo:{}/{}", host.to_lowercase(), repo.to_lowercase()),
+        Source::Direct { url } => format!("direct:{}", host_of(url)),
+        Source::Page { url, .. } => format!("page:{}", host_of(url)),
+    }
+}
+
+fn host_of(url: &str) -> String {
+    reqwest::Url::parse(url).ok().and_then(|u| u.host_str().map(|h| h.to_lowercase())).unwrap_or_default()
+}
+
+/// Checks every entry: patterns compile, launch options have one game slot, paths stay inside the
+/// emulator's folder, and every address is on the download allowlist.
+pub fn check_entries(r: &Registry) -> Result<(), String> {
+    use regex::Regex;
+    use std::path::{Component, Path};
+    let re_ok = |p: &str, what: &str, id: &str| -> Result<(), String> {
+        Regex::new(p).map(|_| ()).map_err(|_| format!("bad {what} for {id}"))
+    };
+    let safe = |p: &str| {
+        let t = p.trim_end_matches('/');
+        !t.is_empty() && Path::new(t).components().all(|c| matches!(c, Component::Normal(_)))
+    };
+    let mut ids = std::collections::HashSet::new();
+    for s in &r.systems {
+        if s.id.is_empty() || !ids.insert(s.id.clone()) {
+            return Err(format!("empty or duplicate system id: {}", s.id));
+        }
+        if let Some(p) = &s.exe_pattern {
+            re_ok(p, "exePattern", &s.id)?;
+        }
+        match &s.source {
+            Source::Github { repo, asset_pattern, version_regex } => {
+                if repo.matches('/').count() != 1 || repo.contains("..") {
+                    return Err(format!("bad repo for {}", s.id));
+                }
+                re_ok(asset_pattern, "assetPattern", &s.id)?;
+                if let Some(v) = version_regex {
+                    re_ok(v, "versionRegex", &s.id)?;
+                }
+            }
+            Source::Forgejo { host, asset_pattern, version_regex, .. } => {
+                crate::installer::check_host(&format!("https://{host}/"))?;
+                re_ok(asset_pattern, "assetPattern", &s.id)?;
+                if let Some(v) = version_regex {
+                    re_ok(v, "versionRegex", &s.id)?;
+                }
+            }
+            Source::Direct { url } => crate::installer::check_host(url)?,
+            Source::Page { url, asset_pattern, fallback_url } => {
+                crate::installer::check_host(url)?;
+                if let Some(f) = fallback_url {
+                    crate::installer::check_host(f)?;
+                }
+                if let Some(p) = asset_pattern {
+                    re_ok(p, "assetPattern", &s.id)?;
+                }
+            }
+        }
+        if let Some(a) = &s.launch_args {
+            let n = a.iter().filter(|x| *x == "{rom}" || x.contains("{titleid}")).count();
+            if n != 1 {
+                return Err(format!("launchArgs of {} needs exactly one {{rom}} or {{titleid}}", s.id));
+            }
+        }
+        if s.backup.iter().any(|b| !safe(b)) {
+            return Err(format!("bad backup path for {}", s.id));
+        }
+        if let Some(m) = &s.portable_marker {
+            if !safe(m) {
+                return Err(format!("bad portableMarker for {}", s.id));
+            }
+        }
+        if let Some(setup) = &s.setup {
+            if setup.folder != "." && !safe(&setup.folder) {
+                return Err(format!("bad setup folder for {}", s.id));
+            }
+            for it in &setup.items {
+                if let Some(p) = &it.name_pattern {
+                    re_ok(p, "setup namePattern", &s.id)?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// A downloaded list may only describe emulators this version of Trayload already knows,
+/// and each must still come from the same project.
+pub fn check_against(remote: &Registry, built_in: &Registry) -> Result<(), String> {
+    for s in &remote.systems {
+        let slug = crate::installer::slug(&s.emulator);
+        let known = built_in.systems.iter().find(|b| crate::installer::slug(&b.emulator) == slug);
+        match known {
+            None => return Err(format!("{} is not an emulator this version knows", s.emulator)),
+            Some(b) if origin(&b.source) != origin(&s.source) => {
+                return Err(format!("{} would come from a different place ({})", s.emulator, origin(&s.source)))
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+/// Accepts a downloaded list only if it is newer than what is built in and passes every check.
+pub fn accept_remote(text: &str, current_revision: u32) -> Result<Registry, String> {
+    let remote = parse(text)?;
+    let built_in = parse(EMBEDDED)?;
+    if remote.revision <= current_revision.max(built_in.revision) {
+        return Err("not newer".into());
+    }
+    check_entries(&remote)?;
+    check_against(&remote, &built_in)?;
+    Ok(remote)
+}
+
+pub fn revision_in_use(app: &AppHandle) -> u32 {
+    load(app).map(|r| r.revision).unwrap_or(0)
 }
 
 pub fn load(app: &AppHandle) -> Result<Registry, String> {
@@ -142,7 +271,18 @@ pub fn load(app: &AppHandle) -> Result<Registry, String> {
             }
         }
     }
-    parse(EMBEDDED)
+    let built_in = parse(EMBEDDED)?;
+    if let Ok(dir) = app.path().app_local_data_dir() {
+        if let Ok(text) = fs::read_to_string(dir.join("registry.remote.json")) {
+            // Re-checked on every load, so a damaged or tampered file is simply ignored.
+            if let Ok(r) = parse(&text) {
+                if r.revision > built_in.revision && check_entries(&r).is_ok() && check_against(&r, &built_in).is_ok() {
+                    return Ok(r);
+                }
+            }
+        }
+    }
+    Ok(built_in)
 }
 
 #[cfg(test)]
@@ -161,41 +301,52 @@ mod tests {
 
     #[test]
     fn registry_entries_are_well_formed() {
-        use regex::Regex;
-        use std::path::{Component, Path};
         let r = parse(EMBEDDED).unwrap();
-        for s in &r.systems {
-            if let Some(p) = &s.exe_pattern {
-                assert!(Regex::new(p).is_ok(), "bad exePattern for {}", s.id);
-            }
-            match &s.source {
-                Source::Github { asset_pattern, version_regex, .. } => {
-                    assert!(Regex::new(asset_pattern).is_ok(), "bad assetPattern for {}", s.id);
-                    if let Some(v) = version_regex {
-                        assert!(Regex::new(v).is_ok(), "bad versionRegex for {}", s.id);
-                    }
-                }
-                Source::Page { asset_pattern: Some(p), .. } => {
-                    assert!(Regex::new(p).is_ok(), "bad assetPattern for {}", s.id);
-                }
-                Source::Forgejo { asset_pattern, .. } => {
-                    assert!(Regex::new(asset_pattern).is_ok(), "bad assetPattern for {}", s.id);
-                }
-                _ => {}
-            }
-            if let Some(a) = &s.launch_args {
-                let n = a.iter().filter(|x| *x == "{rom}" || x.contains("{titleid}")).count();
-                assert_eq!(n, 1, "launchArgs of {} needs exactly one {{rom}} or {{titleid}}", s.id);
-            }
-            for b in &s.backup {
-                let t = std::path::Path::new(b);
-                assert!(!b.is_empty() && t.components().all(|c| matches!(c, Component::Normal(_))), "bad backup path for {}", s.id);
-            }
-            if let Some(m) = &s.portable_marker {
-                let t = m.trim_end_matches('/');
-                assert!(!t.is_empty() && Path::new(t).components().all(|c| matches!(c, Component::Normal(_))));
+        check_entries(&r).expect("embedded registry must pass every check");
+    }
+
+    #[test]
+    fn downloaded_list_cannot_change_the_source() {
+        let built_in = parse(EMBEDDED).unwrap();
+        // Same list, newer revision: fine.
+        let mut ok = built_in.clone();
+        ok.revision += 1;
+        assert!(accept_remote(&serde_json::to_string(&ok).unwrap(), 0).is_ok());
+        // Not newer: ignored.
+        assert!(accept_remote(&serde_json::to_string(&built_in).unwrap(), 0).is_err());
+        // A different project for an existing emulator: rejected.
+        let mut bad = ok.clone();
+        for s in bad.systems.iter_mut() {
+            if let Source::Github { repo, .. } = &mut s.source {
+                *repo = "someone-else/evil".into();
+                break;
             }
         }
+        assert!(accept_remote(&serde_json::to_string(&bad).unwrap(), 0).is_err());
+        // An emulator this version does not know: rejected.
+        let mut extra = ok.clone();
+        let mut s = extra.systems[0].clone();
+        s.id = "newsys".into();
+        s.emulator = "Brand New Emulator".into();
+        extra.systems.push(s);
+        assert!(accept_remote(&serde_json::to_string(&extra).unwrap(), 0).is_err());
+        // A changed asset pattern is allowed.
+        let mut tweak = ok.clone();
+        if let Source::Github { asset_pattern, .. } = &mut tweak.systems[0].source {
+            *asset_pattern = "NewName\\.zip$".into();
+        }
+        assert!(accept_remote(&serde_json::to_string(&tweak).unwrap(), 0).is_ok());
+    }
+
+    #[test]
+    fn downloaded_list_cannot_use_other_hosts_or_bad_patterns() {
+        let mut r = parse(EMBEDDED).unwrap();
+        r.revision += 1;
+        r.systems[0].source = Source::Direct { url: "https://evil.example/x.zip".into() };
+        assert!(check_entries(&r).is_err());
+        let mut r2 = parse(EMBEDDED).unwrap();
+        r2.systems[0].exe_pattern = Some("(".into());
+        assert!(check_entries(&r2).is_err());
     }
 
     #[test]

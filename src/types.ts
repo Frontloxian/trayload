@@ -183,6 +183,21 @@ export interface RemovedGame {
   path: string;
 }
 
+export interface RemoteStatus {
+  registryRevision: number;
+  compatRevision: number;
+  registryUpdated: boolean;
+  compatUpdated: boolean;
+  online: boolean;
+}
+
+export interface CompatNote {
+  system: string;
+  title?: string | null;
+  note: string;
+  link?: string | null;
+}
+
 export interface GamesFolder {
   path: string;
   isDefault: boolean;

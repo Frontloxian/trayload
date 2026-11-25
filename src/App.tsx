@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { AppInfo, LegacyStatus, Registry, ScanSummary, System, UpdateInfo } from "./types";
+import type { AppInfo, LegacyStatus, Registry, RemoteStatus, ScanSummary, System, UpdateInfo } from "./types";
+import { notifyUpdates } from "./notify";
 import CopyStatus from "./CopyStatus";
 import About from "./About";
 import NowPlaying from "./NowPlaying";
@@ -152,8 +153,17 @@ export default function App() {
     invoke<UpdateInfo[]>("check_updates").then(setUpdates).catch(() => setUpdates([]));
   };
 
-  // Look for newer emulator versions once at launch, quietly in the background.
-  useEffect(checkUpdates, []);
+  // Look for newer emulator versions at launch and every few hours while Trayload stays open.
+  useEffect(() => {
+    checkUpdates();
+    const t = window.setInterval(checkUpdates, 6 * 60 * 60 * 1000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  // Optional desktop notification when an emulator update is ready (off unless turned on in Settings).
+  useEffect(() => {
+    void notifyUpdates(updates, registry);
+  }, [updates, registry]);
 
   // Optional: install updates on their own (Settings, "Update emulators automatically").
   const autoTried = useRef<Set<string>>(new Set());
@@ -182,7 +192,25 @@ export default function App() {
   }, [updates]);
 
   useEffect(() => {
-    invoke<Registry>("get_registry").then(setRegistry).catch((e) => setError(String(e)));
+    const load = () => invoke<Registry>("get_registry").then(setRegistry).catch((e) => setError(String(e)));
+    load();
+    // Online updates for the emulator list: on unless turned off in Settings. A plain download of a public file.
+    let on = true;
+    try {
+      on = localStorage.getItem("trayload.checkRegistry") !== "0";
+    } catch {
+      /* default on */
+    }
+    if (on) {
+      invoke<RemoteStatus>("refresh_remote")
+        .then((s) => {
+          if (s.registryUpdated) {
+            load();
+            checkUpdates();
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // Drop game files or folders anywhere in the window to import them.

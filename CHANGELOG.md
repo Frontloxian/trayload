@@ -2,6 +2,13 @@
 
 Each release's notes are shown inside Trayload (after updating, and under Settings > Trayload updates > What's new) and on the GitHub release page. The newest version goes at the top, under its own `## x.y.z` heading.
 
+## 1.3.0
+
+### New
+- **Online updates for the emulator list:** if an emulator's download name changes, Trayload can pick up the fix from its GitHub page without a new app release. It is a plain download of a public file, there is an off switch in Settings > Online updates, and a downloaded list can never point an emulator at a different project or an unlisted host.
+- **Compatibility notes:** short per-game tips (for example "needs the Vulkan renderer") show on the game page, from a small community-editable list with a source link for every note.
+- **Desktop notifications** (off by default): a Windows notification when an emulator update is ready. Only while Trayload is open. Trayload also re-checks for updates every few hours while it stays open.
+
 ## 1.2.0
 
 ### New

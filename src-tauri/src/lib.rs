@@ -3,6 +3,7 @@ mod applog;
 mod art;
 mod backup;
 mod collections;
+mod compat;
 mod games;
 mod installer;
 mod launcher;
@@ -13,6 +14,7 @@ mod news;
 mod setup;
 mod vita;
 mod registry;
+mod remote;
 mod secrets;
 
 use tauri::{Emitter, Manager};
@@ -29,6 +31,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(games::CopyState::default())
         .manage(installer::Installing::default())
         .manage(library::LastScan::default())
@@ -87,6 +90,9 @@ pub fn run() {
             collections::save_overrides,
             installer::check_updates,
             news::open_about_link,
+            remote::refresh_remote,
+            remote::remote_status,
+            compat::get_compat_notes,
             music::list_music_packs,
             music::get_track,
             music::open_music_folder,

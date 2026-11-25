@@ -1,5 +1,6 @@
 {
   "_note": "Windows registry. 'source' tells the launcher where to fetch the latest build; 'assetPattern' is a regex matched against release asset names. Patterns are first guesses: verify each against the real release page before shipping.",
+  "revision": 1,
   "systems": [
     {
       "id": "nes",
