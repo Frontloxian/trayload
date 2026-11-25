@@ -24,11 +24,25 @@ use std::{
 };
 use tauri::{AppHandle, Emitter, Manager};
 
-const BASE: &str = "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/no-intro/";
+const BASE: &str = "https://raw.githubusercontent.com/libretro/libretro-database/master/metadat/";
 const MAX_DAT_BYTES: usize = 40 * 1024 * 1024;
 const MAX_AGE_SECS: u64 = 30 * 24 * 3600;
 
 type Lookup = HashMap<(u32, u64), String>;
+
+/// Extra facts per checksum, from the other lists in libretro-database (same names as the No-Intro
+/// lists, in these folders).
+const FIELDS: [&str; 4] = ["genre", "developer", "publisher", "releaseyear"];
+
+/// Everything known for one console: official names by (checksum, size), and the extra facts.
+#[derive(Default)]
+struct Console {
+    names: Lookup,
+    genre: HashMap<u32, String>,
+    developer: HashMap<u32, String>,
+    publisher: HashMap<u32, String>,
+    year: HashMap<u32, String>,
+}
 
 fn e<T: ToString>(x: T) -> String {
     x.to_string()
@@ -64,7 +78,11 @@ fn table() -> &'static [u32; 256] {
         for (i, slot) in t.iter_mut().enumerate() {
             let mut c = i as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    0xEDB8_8320 ^ (c >> 1)
+                } else {
+                    c >> 1
+                };
             }
             *slot = c;
         }
@@ -142,7 +160,12 @@ enum Hashed {
     Cancelled,
 }
 
-fn hash_reader<R: Read>(mut r: R, len: u64, system: &str, cancel: &AtomicBool) -> Result<Hashed, String> {
+fn hash_reader<R: Read>(
+    mut r: R,
+    len: u64,
+    system: &str,
+    cancel: &AtomicBool,
+) -> Result<Hashed, String> {
     let mut buf = vec![0u8; 1 << 20];
     let mut full = Crc::new();
     let mut headless: Option<Crc> = None;
@@ -268,6 +291,31 @@ fn parse_list(text: &str, into: &mut Lookup) {
     }
 }
 
+/// Reads one of the small lists: `game ( comment "..." genre "Shooter" rom ( crc 56C83C16 ) )`.
+fn parse_meta(text: &str, key: &str, into: &mut HashMap<u32, String>) {
+    let prefix = format!("{key} ");
+    let (mut value, mut crc): (Option<String>, Option<u32>) = (None, None);
+    for raw in text.lines() {
+        let line = raw.trim();
+        if line.starts_with("game (") {
+            (value, crc) = (None, None);
+        } else if line.starts_with(&prefix) {
+            value = tokens(line).get(1).filter(|v| !v.is_empty()).cloned();
+        } else if line.starts_with("rom (") {
+            let t = tokens(line);
+            crc = t
+                .iter()
+                .position(|w| w == "crc")
+                .and_then(|i| t.get(i + 1))
+                .and_then(|h| u32::from_str_radix(h, 16).ok());
+        } else if line == ")" {
+            if let (Some(v), Some(c)) = (value.take(), crc.take()) {
+                into.entry(c).or_insert(v);
+            }
+        }
+    }
+}
+
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -275,7 +323,7 @@ fn now() -> u64 {
         .unwrap_or(0)
 }
 
-async fn download(name: &str) -> Result<String, String> {
+async fn download(sub: &str, name: &str) -> Result<String, String> {
     // Only raw.githubusercontent.com, and no redirects.
     let client = reqwest::Client::builder()
         .user_agent("Trayload")
@@ -283,7 +331,7 @@ async fn download(name: &str) -> Result<String, String> {
         .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(e)?;
-    let url = format!("{BASE}{}.dat", name.replace(' ', "%20"));
+    let url = format!("{BASE}{sub}/{}.dat", name.replace(' ', "%20"));
     let resp = client.get(url).send().await.map_err(e)?;
     if !resp.status().is_success() {
         return Err(format!("HTTP {}", resp.status()));
@@ -297,8 +345,8 @@ async fn download(name: &str) -> Result<String, String> {
 
 /// A list from the cache if it is under 30 days old, otherwise downloaded again. An old copy is
 /// still used if the download fails.
-async fn get_list(dir: &Path, name: &str) -> Result<String, String> {
-    let file = dir.join(format!("{name}.dat"));
+async fn get_list(dir: &Path, sub: &str, name: &str) -> Result<String, String> {
+    let file = dir.join(format!("{sub}__{name}.dat"));
     let age = fs::metadata(&file)
         .and_then(|m| m.modified())
         .ok()
@@ -309,14 +357,20 @@ async fn get_list(dir: &Path, name: &str) -> Result<String, String> {
             return Ok(text);
         }
     }
-    match download(name).await {
+    match download(sub, name).await {
         Ok(text) => {
             let _ = fs::create_dir_all(dir);
-            let tmp = dir.join(format!("{name}.dat.tmp"));
+            let tmp = dir.join(format!("{sub}__{name}.dat.tmp"));
             if fs::write(&tmp, &text).is_ok() {
                 let _ = fs::rename(&tmp, &file);
             }
             Ok(text)
+        }
+        // A console with no such list (for example no genre list): remember that, so it is not asked again.
+        Err(err) if err.starts_with("HTTP 404") => {
+            let _ = fs::create_dir_all(dir);
+            let _ = fs::write(&file, "");
+            Ok(String::new())
         }
         Err(err) => fs::read_to_string(&file).map_err(|_| err),
     }
@@ -444,33 +498,47 @@ pub async fn verify_games(
 
     // The lists for those consoles.
     let dir = app.path().app_local_data_dir().map_err(e)?.join("dats");
-    let mut lookups: HashMap<String, Arc<Lookup>> = HashMap::new();
+    let mut lookups: HashMap<String, Arc<Console>> = HashMap::new();
     let mut summary = VerifySummary::default();
     let mut systems: Vec<String> = jobs.iter().map(|j| j.system.clone()).collect();
     systems.sort();
     systems.dedup();
     for sys in &systems {
-        let mut map = Lookup::new();
+        let mut con = Console::default();
         let mut ok = true;
         for name in lists_for(sys) {
-            match get_list(&dir, name).await {
-                Ok(text) => parse_list(&text, &mut map),
+            match get_list(&dir, "no-intro", name).await {
+                Ok(text) => parse_list(&text, &mut con.names),
                 Err(err) => {
                     applog!("[verify] could not get the list \"{name}\": {err}");
                     ok = false;
                 }
             }
+            // The extra facts are a bonus: if one list is missing, the check still works.
+            for field in FIELDS {
+                if let Ok(text) = get_list(&dir, field, name).await {
+                    let target = match field {
+                        "genre" => &mut con.genre,
+                        "developer" => &mut con.developer,
+                        "publisher" => &mut con.publisher,
+                        _ => &mut con.year,
+                    };
+                    parse_meta(&text, field, target);
+                }
+            }
         }
-        if ok && !map.is_empty() {
-            lookups.insert(sys.clone(), Arc::new(map));
+        if ok && !con.names.is_empty() {
+            lookups.insert(sys.clone(), Arc::new(con));
         }
     }
 
     let app2 = app.clone();
     let cancel = state.cancel.clone();
-    let result = tokio::task::spawn_blocking(move || run(&app2, &db, &cancel, jobs, &lookups, force, summary))
-        .await
-        .map_err(e)?;
+    let result = tokio::task::spawn_blocking(move || {
+        run(&app2, &db, &cancel, jobs, &lookups, force, summary)
+    })
+    .await
+    .map_err(e)?;
     summary = result;
     Ok(summary)
 }
@@ -480,7 +548,7 @@ fn run(
     db: &Db,
     cancel: &AtomicBool,
     jobs: Vec<Job>,
-    lookups: &HashMap<String, Arc<Lookup>>,
+    lookups: &HashMap<String, Arc<Console>>,
     force: bool,
     mut sum: VerifySummary,
 ) -> VerifySummary {
@@ -512,17 +580,25 @@ fn run(
             .map(|x| x.to_string_lossy().to_lowercase())
             .unwrap_or_default();
         let (status, name) = if job.system == "genesis" && ext == "smd" {
-            ("unsupported", "Interleaved .smd files can't be checked.".to_string())
+            (
+                "unsupported",
+                "Interleaved .smd files can't be checked.".to_string(),
+            )
         } else {
             match hash_game(&job.path, &job.system, cancel) {
                 Ok(Hashed::Cancelled) => {
                     sum.cancelled = true;
                     break;
                 }
-                Ok(Hashed::Done(found)) => match found.iter().find_map(|k| lookup.get(k)) {
-                    Some(n) => ("verified", n.clone()),
-                    None => ("unknown", String::new()),
-                },
+                Ok(Hashed::Done(found)) => {
+                    match found.iter().find(|k| lookup.names.contains_key(*k)) {
+                        Some(k) => {
+                            save_info(db, job.id, lookup, k.0);
+                            ("verified", lookup.names[k].clone())
+                        }
+                        None => ("unknown", String::new()),
+                    }
+                }
                 Err(err) => ("unsupported", err),
             }
         };
@@ -558,17 +634,81 @@ fn run(
     sum
 }
 
+fn save_info(db: &Db, id: i64, con: &Console, crc: u32) {
+    let get = |m: &HashMap<u32, String>| m.get(&crc).cloned().unwrap_or_default();
+    if let Ok(conn) = db.0.lock() {
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO game_info (game_id, year, developer, publisher, genre) VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![id, get(&con.year), get(&con.developer), get(&con.publisher), get(&con.genre)],
+        );
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameInfo {
+    year: String,
+    developer: String,
+    publisher: String,
+    genre: String,
+}
+
+#[tauri::command]
+pub fn get_game_info(db: tauri::State<'_, Db>, game_id: i64) -> Option<GameInfo> {
+    let conn = db.0.lock().ok()?;
+    let info = conn
+        .query_row(
+            "SELECT year, developer, publisher, genre FROM game_info WHERE game_id = ?1",
+            [game_id],
+            |r| {
+                Ok(GameInfo {
+                    year: r.get(0)?,
+                    developer: r.get(1)?,
+                    publisher: r.get(2)?,
+                    genre: r.get(3)?,
+                })
+            },
+        )
+        .optional()
+        .ok()
+        .flatten()?;
+    let any = [&info.year, &info.developer, &info.publisher, &info.genre]
+        .iter()
+        .any(|v| !v.is_empty());
+    any.then_some(info)
+}
+
 fn already_done(db: &Db, job: &Job) -> bool {
     let Ok(conn) = db.0.lock() else { return false };
     conn.query_row(
         "SELECT status, size, mtime FROM game_verify WHERE game_id = ?1",
         [job.id],
-        |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?)),
+        |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
+        },
     )
     .optional()
     .ok()
     .flatten()
-    .is_some_and(|(s, size, mtime)| s == "verified" && size == job.size && mtime == job.mtime)
+    .is_some_and(|(s, size, mtime)| {
+        s == "verified"
+            && size == job.size
+            && mtime == job.mtime
+            && conn
+                .query_row(
+                    "SELECT 1 FROM game_info WHERE game_id = ?1",
+                    [job.id],
+                    |_| Ok(()),
+                )
+                .optional()
+                .ok()
+                .flatten()
+                .is_some()
+    })
 }
 
 #[cfg(test)]
@@ -599,6 +739,17 @@ mod tests {
     }
 
     #[test]
+    fn reads_the_extra_facts() {
+        let text = "clrmamepro (\n\tname \"x\"\n)\n\ngame (\n\tcomment \"007 - NightFire (USA)\"\n\tgenre \"Shooter\"\n\trom ( crc 56C83C16 )\n)\n\ngame (\n\tcomment \"B\"\n\treleaseyear \"2002\"\n\trom ( crc C8CDB4ED )\n)\n";
+        let (mut g, mut y) = (HashMap::new(), HashMap::new());
+        parse_meta(text, "genre", &mut g);
+        parse_meta(text, "releaseyear", &mut y);
+        assert_eq!(g.get(&0x56C83C16).map(String::as_str), Some("Shooter"));
+        assert_eq!(y.get(&0xC8CDB4ED).map(String::as_str), Some("2002"));
+        assert_eq!(g.len(), 1);
+    }
+
+    #[test]
     fn quoted_words_stay_together() {
         assert_eq!(
             tokens("rom ( name \"A B.gb\" size 5 )"),
@@ -613,7 +764,8 @@ mod tests {
         let body = b"123456789".to_vec();
         file.extend_from_slice(&body);
         let cancel = AtomicBool::new(false);
-        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "nes", &cancel).unwrap() else {
+        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "nes", &cancel).unwrap()
+        else {
             panic!()
         };
         assert_eq!(h.len(), 2);
@@ -625,7 +777,8 @@ mod tests {
         let mut file = vec![0u8; 512];
         file.extend_from_slice(&vec![7u8; 1024]);
         let cancel = AtomicBool::new(false);
-        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "snes", &cancel).unwrap() else {
+        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "snes", &cancel).unwrap()
+        else {
             panic!()
         };
         assert_eq!(h[1], (crc_of(&vec![7u8; 1024]), 1024));

@@ -283,3 +283,10 @@ export interface VerifyProgress {
   total: number;
   title: string;
 }
+
+export interface GameInfo {
+  year: string;
+  developer: string;
+  publisher: string;
+  genre: string;
+}

@@ -120,6 +120,7 @@ pub fn run() {
             verify::verify_games,
             verify::cancel_verify,
             verify::get_verification,
+            verify::get_game_info,
             games::get_organize_mode,
             games::set_organize_mode,
             games::plan_organize,

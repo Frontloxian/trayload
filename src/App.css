@@ -377,3 +377,7 @@ ul.plain {
 .chip.warn { background: #3f2f0c; color: #f5c04d; }
 .verify-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; margin: 8px 0; }
 .verify-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); }
+
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0 12px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }

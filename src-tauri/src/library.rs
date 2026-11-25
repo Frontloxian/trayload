@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS game_verify (
   mtime INTEGER NOT NULL,
   checked_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS game_info (
+  game_id INTEGER PRIMARY KEY,
+  year TEXT NOT NULL DEFAULT '',
+  developer TEXT NOT NULL DEFAULT '',
+  publisher TEXT NOT NULL DEFAULT '',
+  genre TEXT NOT NULL DEFAULT ''
+);
 CREATE TABLE IF NOT EXISTS ignored_files (
   path TEXT PRIMARY KEY
 );

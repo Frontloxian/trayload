@@ -768,6 +768,7 @@ fn purge(app: &AppHandle, db: &Db, ids: Vec<i64>) -> Result<DeleteSummary, Strin
                 "DELETE FROM play_sessions WHERE game_id = ?1",
                 "DELETE FROM game_discs WHERE game_id = ?1",
                 "DELETE FROM game_verify WHERE game_id = ?1",
+                "DELETE FROM game_info WHERE game_id = ?1",
                 "DELETE FROM games WHERE id = ?1",
             ] {
                 tx.execute(sql, [id]).map_err(e)?;
