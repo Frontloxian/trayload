@@ -231,6 +231,22 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     };
   }, []);
 
+  async function useOfficialNames() {
+    setVErr("");
+    try {
+      const n = await invoke<number>("use_official_names", { ids: null, dryRun: true });
+      if (n === 0) {
+        setMsg("Every verified game already has its official name.");
+        return;
+      }
+      if (!window.confirm(`Rename ${n} verified game${n === 1 ? "" : "s"} to their official names?\n\nOnly the name shown in Trayload changes. Your files are not renamed.`)) return;
+      await invoke("use_official_names", { ids: null, dryRun: false });
+      setMsg(`Renamed ${n} game${n === 1 ? "" : "s"}.`);
+    } catch (err) {
+      setVErr(String(err));
+    }
+  }
+
   async function runVerify() {
     setVerifying(true);
     setVsum(null);
@@ -500,6 +516,9 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         <div className="row wrap">
           <button className="btn" disabled={verifying} onClick={() => void runVerify()}>
             {verifying ? "Checking…" : "Check my games"}
+          </button>
+          <button className="btn" disabled={verifying} onClick={() => void useOfficialNames()}>
+            Use official names…
           </button>
           {verifying && (
             <button className="btn" onClick={() => void invoke("cancel_verify")}>

@@ -290,3 +290,10 @@ export interface GameInfo {
   publisher: string;
   genre: string;
 }
+
+export interface CoverCandidate {
+  label: string;
+  name: string;
+  url: string;
+  preview: string;
+}

@@ -78,11 +78,7 @@ fn table() -> &'static [u32; 256] {
         for (i, slot) in t.iter_mut().enumerate() {
             let mut c = i as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 {
-                    0xEDB8_8320 ^ (c >> 1)
-                } else {
-                    c >> 1
-                };
+                c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
             }
             *slot = c;
         }
@@ -160,12 +156,7 @@ enum Hashed {
     Cancelled,
 }
 
-fn hash_reader<R: Read>(
-    mut r: R,
-    len: u64,
-    system: &str,
-    cancel: &AtomicBool,
-) -> Result<Hashed, String> {
+fn hash_reader<R: Read>(mut r: R, len: u64, system: &str, cancel: &AtomicBool) -> Result<Hashed, String> {
     let mut buf = vec![0u8; 1 << 20];
     let mut full = Crc::new();
     let mut headless: Option<Crc> = None;
@@ -534,11 +525,9 @@ pub async fn verify_games(
 
     let app2 = app.clone();
     let cancel = state.cancel.clone();
-    let result = tokio::task::spawn_blocking(move || {
-        run(&app2, &db, &cancel, jobs, &lookups, force, summary)
-    })
-    .await
-    .map_err(e)?;
+    let result = tokio::task::spawn_blocking(move || run(&app2, &db, &cancel, jobs, &lookups, force, summary))
+        .await
+        .map_err(e)?;
     summary = result;
     Ok(summary)
 }
@@ -580,25 +569,20 @@ fn run(
             .map(|x| x.to_string_lossy().to_lowercase())
             .unwrap_or_default();
         let (status, name) = if job.system == "genesis" && ext == "smd" {
-            (
-                "unsupported",
-                "Interleaved .smd files can't be checked.".to_string(),
-            )
+            ("unsupported", "Interleaved .smd files can't be checked.".to_string())
         } else {
             match hash_game(&job.path, &job.system, cancel) {
                 Ok(Hashed::Cancelled) => {
                     sum.cancelled = true;
                     break;
                 }
-                Ok(Hashed::Done(found)) => {
-                    match found.iter().find(|k| lookup.names.contains_key(*k)) {
-                        Some(k) => {
-                            save_info(db, job.id, lookup, k.0);
-                            ("verified", lookup.names[k].clone())
-                        }
-                        None => ("unknown", String::new()),
+                Ok(Hashed::Done(found)) => match found.iter().find(|k| lookup.names.contains_key(*k)) {
+                    Some(k) => {
+                        save_info(db, job.id, lookup, k.0);
+                        ("verified", lookup.names[k].clone())
                     }
-                }
+                    None => ("unknown", String::new()),
+                },
                 Err(err) => ("unsupported", err),
             }
         };
@@ -634,12 +618,54 @@ fn run(
     sum
 }
 
+/// Gives verified games their official name. With `dry_run` it only counts. Covers that were not found
+/// are looked for again under the new name.
+#[tauri::command]
+pub fn use_official_names(db: tauri::State<'_, Db>, ids: Option<Vec<i64>>, dry_run: bool) -> Result<usize, String> {
+    let mut conn = db.0.lock().map_err(e)?;
+    let rows: Vec<(i64, String)> = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT g.id, v.name FROM games g JOIN game_verify v ON v.game_id = g.id
+                 WHERE g.removed = 0 AND v.status = 'verified' AND v.name <> '' AND g.title <> v.name",
+            )
+            .map_err(e)?;
+        let list: Vec<(i64, String)> = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .map_err(e)?
+            .filter_map(Result::ok)
+            .filter(|(id, _)| ids.as_ref().map_or(true, |v| v.contains(id)))
+            .collect();
+        list
+    };
+    if !dry_run {
+        let tx = conn.transaction().map_err(e)?;
+        for (id, name) in &rows {
+            tx.execute("UPDATE games SET title = ?2 WHERE id = ?1", params![id, name])
+                .map_err(e)?;
+            tx.execute(
+                "UPDATE games SET art_status = 'none', art_tried_at = NULL WHERE id = ?1 AND art_status = 'notfound'",
+                [id],
+            )
+            .map_err(e)?;
+        }
+        tx.commit().map_err(e)?;
+    }
+    Ok(rows.len())
+}
+
 fn save_info(db: &Db, id: i64, con: &Console, crc: u32) {
     let get = |m: &HashMap<u32, String>| m.get(&crc).cloned().unwrap_or_default();
     if let Ok(conn) = db.0.lock() {
         let _ = conn.execute(
             "INSERT OR REPLACE INTO game_info (game_id, year, developer, publisher, genre) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![id, get(&con.year), get(&con.developer), get(&con.publisher), get(&con.genre)],
+            params![
+                id,
+                get(&con.year),
+                get(&con.developer),
+                get(&con.publisher),
+                get(&con.genre)
+            ],
         );
     }
 }
@@ -683,13 +709,7 @@ fn already_done(db: &Db, job: &Job) -> bool {
     conn.query_row(
         "SELECT status, size, mtime FROM game_verify WHERE game_id = ?1",
         [job.id],
-        |r| {
-            Ok((
-                r.get::<_, String>(0)?,
-                r.get::<_, i64>(1)?,
-                r.get::<_, i64>(2)?,
-            ))
-        },
+        |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?)),
     )
     .optional()
     .ok()
@@ -699,11 +719,7 @@ fn already_done(db: &Db, job: &Job) -> bool {
             && size == job.size
             && mtime == job.mtime
             && conn
-                .query_row(
-                    "SELECT 1 FROM game_info WHERE game_id = ?1",
-                    [job.id],
-                    |_| Ok(()),
-                )
+                .query_row("SELECT 1 FROM game_info WHERE game_id = ?1", [job.id], |_| Ok(()))
                 .optional()
                 .ok()
                 .flatten()
@@ -764,8 +780,7 @@ mod tests {
         let body = b"123456789".to_vec();
         file.extend_from_slice(&body);
         let cancel = AtomicBool::new(false);
-        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "nes", &cancel).unwrap()
-        else {
+        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "nes", &cancel).unwrap() else {
             panic!()
         };
         assert_eq!(h.len(), 2);
@@ -777,8 +792,7 @@ mod tests {
         let mut file = vec![0u8; 512];
         file.extend_from_slice(&vec![7u8; 1024]);
         let cancel = AtomicBool::new(false);
-        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "snes", &cancel).unwrap()
-        else {
+        let Hashed::Done(h) = hash_reader(&file[..], file.len() as u64, "snes", &cancel).unwrap() else {
             panic!()
         };
         assert_eq!(h[1], (crc_of(&vec![7u8; 1024]), 1024));

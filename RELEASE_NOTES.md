@@ -10,6 +10,8 @@ The install steps and the "no ROMs or BIOS" notice are added automatically below
 - **Easier Settings.** Sections in a list on the left, plus a search box.
 - **Check your games.** Compare cartridge games (NES, SNES, Game Boy, GBA, N64, DS, Sega) with the No-Intro lists. Each game shows "Verified" or "Not in the list". Nothing about your files is sent anywhere.
 - **Game info.** Verified games show release year, developer, publisher and genre.
+- **Pick your cover.** "Find covers online" shows box art, title screens and in-game pictures, including other regions.
+- **Official names.** Verified games can use their official name. Files are never renamed.
 
 ## 1.3.0
 

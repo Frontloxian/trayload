@@ -381,3 +381,9 @@ ul.plain {
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0 12px; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; }
+
+/* Cover picker (M22) */
+.cover-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 10px 0 14px; max-height: 60vh; overflow: auto; }
+.cover-choice { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; color: inherit; font: inherit; cursor: pointer; }
+.cover-choice:hover, .cover-choice:focus-visible { border-color: var(--primary); }
+.cover-choice img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; background: #0003; border-radius: 6px; }

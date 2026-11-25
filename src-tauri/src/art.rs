@@ -29,7 +29,10 @@ const RETRY_NOTFOUND_SECS: i64 = 7 * 24 * 3600; // nothing found: try again afte
 type Img = (Vec<u8>, &'static str);
 
 fn now() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
 }
 
 fn e<E: ToString>(x: E) -> String {
@@ -87,7 +90,9 @@ fn similar(a: &str, b: &str) -> bool {
 }
 
 fn libretro_name(s: &str) -> String {
-    s.chars().map(|c| if "&*/:`<>?\\|\"".contains(c) { '_' } else { c }).collect()
+    s.chars()
+        .map(|c| if "&*/:`<>?\\|\"".contains(c) { '_' } else { c })
+        .collect()
 }
 
 fn image_ext(b: &[u8]) -> Option<&'static str> {
@@ -178,8 +183,13 @@ async fn from_sgdb(client: &reqwest::Client, key: &str, title: &str) -> Result<O
         return Ok(None);
     }
     let mut u = reqwest::Url::parse("https://www.steamgriddb.com/api/v2/search/autocomplete/").map_err(e)?;
-    u.path_segments_mut().map_err(|_| "bad URL".to_string())?.pop_if_empty().push(&clean);
-    let Some(search) = sgdb_json(client, key, u.as_str()).await? else { return Ok(None) };
+    u.path_segments_mut()
+        .map_err(|_| "bad URL".to_string())?
+        .pop_if_empty()
+        .push(&clean);
+    let Some(search) = sgdb_json(client, key, u.as_str()).await? else {
+        return Ok(None);
+    };
     let items = search["data"].as_array().cloned().unwrap_or_default();
     for item in items.iter().take(3) {
         if !similar(item["name"].as_str().unwrap_or(""), &clean) {
@@ -189,7 +199,9 @@ async fn from_sgdb(client: &reqwest::Client, key: &str, title: &str) -> Result<O
         let url = format!(
             "https://www.steamgriddb.com/api/v2/grids/game/{id}?dimensions=600x900,342x482,660x930&types=static&nsfw=false&humor=false"
         );
-        let Some(grids) = sgdb_json(client, key, &url).await? else { continue };
+        let Some(grids) = sgdb_json(client, key, &url).await? else {
+            continue;
+        };
         let list = grids["data"].as_array().cloned().unwrap_or_default();
         for g in list.iter().take(3) {
             if let Some(img_url) = g["url"].as_str() {
@@ -233,15 +245,22 @@ fn get_key(db: &Db) -> Option<String> {
         return Some(k);
     }
     let conn = db.0.lock().ok()?;
-    conn.query_row("SELECT value FROM settings WHERE key = 'steamgriddb_key'", [], |r| r.get::<_, String>(0))
-        .optional()
-        .ok()
-        .flatten()
-        .filter(|k| !k.trim().is_empty())
+    conn.query_row("SELECT value FROM settings WHERE key = 'steamgriddb_key'", [], |r| {
+        r.get::<_, String>(0)
+    })
+    .optional()
+    .ok()
+    .flatten()
+    .filter(|k| !k.trim().is_empty())
 }
 
 fn save_art(app: &AppHandle, db: &Db, id: i64, img: &Img, source: &str, manual: bool) -> Result<(), String> {
-    let dir = app.path().app_local_data_dir().map_err(e)?.join("art").join(id.to_string());
+    let dir = app
+        .path()
+        .app_local_data_dir()
+        .map_err(e)?
+        .join("art")
+        .join(id.to_string());
     fs::create_dir_all(&dir).map_err(e)?;
     if let Ok(rd) = fs::read_dir(&dir) {
         for f in rd.flatten() {
@@ -255,7 +274,14 @@ fn save_art(app: &AppHandle, db: &Db, id: i64, img: &Img, source: &str, manual: 
     conn.execute(
         "UPDATE games SET art_status = ?2, art_source = ?3, art_file = ?4, art_tried_at = ?5
          WHERE id = ?1 AND (?6 = 1 OR art_status IN ('none', 'notfound'))",
-        params![id, status, source, file.to_string_lossy().to_string(), now(), manual as i64],
+        params![
+            id,
+            status,
+            source,
+            file.to_string_lossy().to_string(),
+            now(),
+            manual as i64
+        ],
     )
     .map_err(e)?;
     Ok(())
@@ -286,7 +312,13 @@ fn next_job(db: &Db) -> Result<Option<Job>, String> {
            (art_status = 'notfound' AND COALESCE(art_tried_at, 0) < ?2))
          ORDER BY id LIMIT 1",
         params![t - RETRY_NONE_SECS, t - RETRY_NOTFOUND_SECS],
-        |r| Ok(Job { id: r.get(0)?, system_id: r.get(1)?, title: r.get(2)? }),
+        |r| {
+            Ok(Job {
+                id: r.get(0)?,
+                system_id: r.get(1)?,
+                title: r.get(2)?,
+            })
+        },
     )
     .optional()
     .map_err(e)
@@ -359,7 +391,9 @@ pub struct ArtSettings {
 
 #[tauri::command]
 pub fn get_art_settings(db: tauri::State<'_, Db>) -> ArtSettings {
-    ArtSettings { has_steamgriddb_key: get_key(&db).is_some() }
+    ArtSettings {
+        has_steamgriddb_key: get_key(&db).is_some(),
+    }
 }
 
 fn reset_retries(db: &Db) -> Result<(), String> {
@@ -385,7 +419,8 @@ pub fn set_steamgriddb_key(db: tauri::State<'_, Db>, key: String) -> Result<(), 
         let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
         if in_store || key.is_empty() {
             // Stored safely (or cleared): make sure no copy is left in the database.
-            conn.execute("DELETE FROM settings WHERE key = 'steamgriddb_key'", []).map_err(e)?;
+            conn.execute("DELETE FROM settings WHERE key = 'steamgriddb_key'", [])
+                .map_err(e)?;
         } else {
             crate::applog!("[secrets] credential store unavailable; keeping the key in the library database");
             conn.execute(
@@ -418,16 +453,149 @@ pub fn set_art_from_file(app: AppHandle, db: tauri::State<'_, Db>, id: i64, path
     Ok(())
 }
 
+// ---------- choosing a cover by hand ----------
+
+const THUMBS: &str = "https://raw.githubusercontent.com/libretro-thumbnails/";
+
+fn thumb_url(repo: &str, folder: &str, name: &str) -> Result<String, String> {
+    let file = format!("{}.png", libretro_name(name));
+    let mut u = reqwest::Url::parse(THUMBS).map_err(e)?;
+    u.path_segments_mut()
+        .map_err(|_| "bad URL".to_string())?
+        .pop_if_empty()
+        .extend([repo, "master", folder, file.as_str()]);
+    Ok(u.to_string())
+}
+
+fn data_url(img: &Img) -> String {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let mime = match img.1 {
+        "png" => "image/png",
+        "jpg" => "image/jpeg",
+        _ => "image/webp",
+    };
+    format!("data:{mime};base64,{}", STANDARD.encode(&img.0))
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CoverCandidate {
+    /// "Box art", "Title screen" or "In-game"
+    label: String,
+    /// The name the picture is filed under, which often shows the region.
+    name: String,
+    url: String,
+    preview: String,
+}
+
+/// Looks up the box art, title screen and in-game pictures that libretro-thumbnails has for a game
+/// (using its official name too, when the game has been verified), so you can pick one.
+#[tauri::command]
+pub async fn cover_candidates(
+    app: AppHandle,
+    db: tauri::State<'_, Db>,
+    id: i64,
+) -> Result<Vec<CoverCandidate>, String> {
+    let (system_id, title, official): (String, String, Option<String>) = {
+        let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
+        let (sys, title) = conn
+            .query_row("SELECT system_id, title FROM games WHERE id = ?1", [id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })
+            .map_err(e)?;
+        let official = conn
+            .query_row(
+                "SELECT name FROM game_verify WHERE game_id = ?1 AND status = 'verified'",
+                [id],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()
+            .map_err(e)?;
+        (sys, title, official)
+    };
+    let reg = registry::load(&app)?;
+    let Some(repos) = reg
+        .systems
+        .iter()
+        .find(|s| s.id == system_id)
+        .and_then(|s| s.art_repos.clone())
+    else {
+        return Ok(vec![]);
+    };
+
+    let clean = clean_title(&title);
+    let mut names: Vec<String> = Vec::new();
+    for n in official.into_iter().chain(std::iter::once(title.clone())).chain(
+        ["(USA)", "(Europe)", "(World)", "(Japan)"]
+            .iter()
+            .map(|t| format!("{clean} {t}")),
+    ) {
+        if !names.contains(&n) {
+            names.push(n);
+        }
+    }
+
+    let client = client()?;
+    let mut found: Vec<CoverCandidate> = Vec::new();
+    let mut seen: Vec<Vec<u8>> = Vec::new();
+    for (label, folder, all) in [
+        ("Box art", "Named_Boxarts", true),
+        ("Title screen", "Named_Titles", false),
+        ("In-game", "Named_Snaps", false),
+    ] {
+        let mut got = 0;
+        'names: for repo in &repos {
+            for name in &names {
+                let url = thumb_url(repo, folder, name)?;
+                if let Some(img) = fetch_image(&client, &url).await? {
+                    if !seen.contains(&img.0) {
+                        found.push(CoverCandidate {
+                            label: label.to_string(),
+                            name: name.clone(),
+                            url,
+                            preview: data_url(&img),
+                        });
+                        seen.push(img.0);
+                        got += 1;
+                        if !all || got >= 4 {
+                            break 'names;
+                        }
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(150)).await;
+            }
+        }
+    }
+    Ok(found)
+}
+
+/// Uses one of the pictures from `cover_candidates` as the game's cover.
+#[tauri::command]
+pub async fn set_cover_from_url(app: AppHandle, db: tauri::State<'_, Db>, id: i64, url: String) -> Result<(), String> {
+    if !url.starts_with(THUMBS) {
+        return Err("That picture is not from the cover library.".into());
+    }
+    let client = client()?;
+    let img = fetch_image(&client, &url)
+        .await?
+        .ok_or("That picture is no longer there.")?;
+    save_art(&app, &db, id, &img, "libretro-thumbnails", true)?;
+    let _ = app.emit("art-updated", id);
+    Ok(())
+}
+
 /// Returns a game's cover as a data URL, read straight from the app's own art folder.
 /// (Only the file recorded for that game in the library is ever read.)
 #[tauri::command]
 pub fn get_cover(db: tauri::State<'_, Db>, id: i64) -> Result<String, String> {
     let path: Option<String> = {
         let conn = db.0.lock().map_err(|_| "database lock poisoned".to_string())?;
-        conn.query_row("SELECT art_file FROM games WHERE id = ?1", [id], |r| r.get::<_, Option<String>>(0))
-            .optional()
-            .map_err(e)?
-            .flatten()
+        conn.query_row("SELECT art_file FROM games WHERE id = ?1", [id], |r| {
+            r.get::<_, Option<String>>(0)
+        })
+        .optional()
+        .map_err(e)?
+        .flatten()
     };
     let path = path.ok_or("this game has no cover")?;
     let bytes = fs::read(&path).map_err(|x| format!("cannot read the cover file: {x}"))?;
@@ -447,7 +615,10 @@ mod tests {
 
     #[test]
     fn cleans_tags() {
-        assert_eq!(clean_title("Super Mario Advance 4 (USA) (Rev 1)"), "Super Mario Advance 4");
+        assert_eq!(
+            clean_title("Super Mario Advance 4 (USA) (Rev 1)"),
+            "Super Mario Advance 4"
+        );
         assert_eq!(clean_title("Final Fantasy VII [Disc 1] (Europe)"), "Final Fantasy VII");
         assert_eq!(clean_title("Plain Title"), "Plain Title");
     }

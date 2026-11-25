@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Dialog } from "./Overlays";
 import { VERIFY_SYSTEMS } from "./types";
-import type { CompatNote, Collection, Game, GameDetails, GameInfo, Membership, System, Verification, VerifySummary } from "./types";
+import type { CompatNote, Collection, CoverCandidate, Game, GameDetails, GameInfo, Membership, System, Verification, VerifySummary } from "./types";
 import { useCover } from "./useCover";
 import { dateTime, duration, hue, initials } from "./util";
 
@@ -24,6 +25,7 @@ export default function GameDetail({ id, systems, onBack }: Props) {
   const [tips, setTips] = useState<CompatNote[]>([]);
   const [check, setCheck] = useState<Verification | null>(null);
   const [info, setInfo] = useState<GameInfo | null>(null);
+  const [picker, setPicker] = useState<{ busy: boolean; items: CoverCandidate[] } | null>(null);
   const [checking, setChecking] = useState(false);
   const [checkNote, setCheckNote] = useState("");
   const [msg, setMsg] = useState("");
@@ -64,6 +66,22 @@ export default function GameDetail({ id, systems, onBack }: Props) {
       .then(setInfo)
       .catch(() => setInfo(null));
   }, [id]);
+
+  async function openPicker() {
+    setPicker({ busy: true, items: [] });
+    try {
+      const items = await invoke<CoverCandidate[]>("cover_candidates", { id });
+      setPicker({ busy: false, items });
+    } catch (e) {
+      setPicker(null);
+      setError(String(e));
+    }
+  }
+
+  async function chooseCover(url: string) {
+    setPicker(null);
+    await act(() => invoke("set_cover_from_url", { id, url }), "Cover updated.");
+  }
 
   async function runCheck() {
     setChecking(true);
@@ -225,6 +243,16 @@ export default function GameDetail({ id, systems, onBack }: Props) {
               </dl>
             )}
             <div className="row">
+              {check?.status === "verified" && game.title !== check.name && (
+                <button
+                  className="btn"
+                  onClick={() =>
+                    act(() => invoke("use_official_names", { ids: [id], dryRun: false }), "Now using the official name.")
+                  }
+                >
+                  Use the official name
+                </button>
+              )}
               <button className="btn" disabled={checking || game.missing} onClick={() => void runCheck()}>
                 {checking ? "Checking…" : check ? "Check again" : "Check this file"}
               </button>
@@ -349,6 +377,9 @@ export default function GameDetail({ id, systems, onBack }: Props) {
             >
               Change cover…
             </button>
+            <button className="btn" onClick={() => void openPicker()}>
+              Find covers online…
+            </button>
             <button
               className="btn danger"
               onClick={() => {
@@ -361,6 +392,35 @@ export default function GameDetail({ id, systems, onBack }: Props) {
           </div>
         </section>
       </div>
+      {picker && (
+        <Dialog title="Find a cover" onClose={() => setPicker(null)} wide>
+          {picker.busy ? (
+            <p className="muted" aria-live="polite">
+              Looking for pictures…
+            </p>
+          ) : picker.items.length === 0 ? (
+            <p className="muted">
+              No pictures were found for this game. Try "Use the official name" first if the game is verified, or choose
+              your own image with "Change cover…".
+            </p>
+          ) : (
+            <div className="cover-grid">
+              {picker.items.map((c) => (
+                <button key={c.url} className="cover-choice" onClick={() => void chooseCover(c.url)}>
+                  <img src={c.preview} alt="" />
+                  <strong>{c.label}</strong>
+                  <span className="muted small">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="row">
+            <button className="btn" onClick={() => setPicker(null)}>
+              Close
+            </button>
+          </div>
+        </Dialog>
+      )}
     </>
   );
 }
