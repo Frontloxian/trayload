@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting started · Trayload</title>
+<meta name="description" content="Trayload is a free, open-source Windows launcher that installs and runs emulators from their official sources.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Trayload</a>
+  <nav aria-label="Main"><a href="index.html">Home</a><a href="getting-started.html" aria-current="page">Getting started</a><a href="systems.html">Systems and BIOS</a><a href="faq.html">FAQ</a><a href="troubleshooting.html">Troubleshooting</a></nav>
+</header>
+<main>
+<h1>Getting started</h1>
+<p class="lead">From install to your first game.</p>
+<h2>1. Install Trayload</h2>
+<p>Download the installer from the <a href="https://github.com/Frontloxian/trayload/releases/latest">latest release</a> and run it. It installs for your user account only, so it does not ask for administrator rights.</p>
+<p class="note">Windows may show a "Windows protected your PC" (SmartScreen) message, because the installer is not code-signed yet. Choose <strong>More info</strong>, then <strong>Run anyway</strong>. The code is open source, and every release is built on GitHub from the public source.</p>
+<h2>2. Install an emulator</h2>
+<ol>
+<li>Open the <strong>Emulators</strong> tab.</li>
+<li>Click <strong>Install</strong> next to the emulator for your console, or <strong>Install all…</strong> to pick several at once. You see the download sizes first.</li>
+<li>Trayload downloads it from the emulator's official page and sets it up in its own folder. Nothing else on your PC is changed.</li>
+</ol>
+<h2>3. Check what the console needs</h2>
+<p>Open the <strong>Setup checklist</strong> tab. Some consoles need files from your own console, such as a BIOS or firmware. The checklist shows what is missing, and <strong>Open folder</strong> takes you to the exact place to put each file. See <a href="systems.html">Systems and BIOS</a> for the full list.</p>
+<h2>4. Add your games</h2>
+<ul>
+<li><strong>Drag game files or folders onto the Trayload window.</strong> Trayload recognises the console and copies each game into <code>Documents\Trayload\Games\&lt;console&gt;</code>. Your originals are not changed. Games with several files (such as a <code>.cue</code> with <code>.bin</code> files) are kept together, and several discs of one game become one entry.</li>
+<li>If Trayload cannot tell which console a file is for, it asks you.</li>
+<li><strong>Add folder</strong> in the Library scans a folder where it is, without copying. Good for a large collection you already keep somewhere.</li>
+<li>You can change the games folder, and bring games you added earlier into it, under <strong>Settings</strong>.</li>
+</ul>
+<h2>5. Play</h2>
+<p>Click a game, then <strong>Play</strong>. Trayload starts the right emulator, tracks play time, and lists the game under Recently played. Use <strong>Favorites</strong> and <strong>Collections</strong> to organise, and the game's page for per-game launch options and notes.</p>
+<h2>Handy things</h2>
+<ul>
+<li>Press <code>?</code> for the keyboard shortcuts. A controller can move around the app too.</li>
+<li><strong>Settings</strong> has covers (optional SteamGridDB key), music, backups to a USB drive or any folder, online updates and the games folder.</li>
+<li>Trayload updates itself: an update banner appears when a new version is out, with release notes.</li>
+</ul>
+</main>
+<footer>
+  <p>Trayload 1.2.0 · GPL-3.0 · <a href="https://github.com/Frontloxian/trayload">Source on GitHub</a> · <a href="https://github.com/Frontloxian/trayload/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/Frontloxian/trayload/issues/new/choose">Report a problem</a></p>
+  <p>Trayload does not provide or link game ROMs, BIOS files, firmware or keys. Use files from games and consoles you own.</p>
+</footer>
+</body>
+</html>

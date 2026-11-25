@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Troubleshooting · Trayload</title>
+<meta name="description" content="Trayload is a free, open-source Windows launcher that installs and runs emulators from their official sources.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Trayload</a>
+  <nav aria-label="Main"><a href="index.html">Home</a><a href="getting-started.html">Getting started</a><a href="systems.html">Systems and BIOS</a><a href="faq.html">FAQ</a><a href="troubleshooting.html" aria-current="page">Troubleshooting</a></nav>
+</header>
+<main>
+<h1>Troubleshooting</h1>
+<details><summary>Windows blocks or warns about the installer</summary><p>That is SmartScreen, because the installer is not code-signed. Choose <strong>More info</strong>, then <strong>Run anyway</strong>. If your antivirus quarantines an emulator after it is installed, add Trayload's emulator folder (<code>%LOCALAPPDATA%\com.loxianthepeak.trayload\emulators</code>) to its exclusions. Emulators are sometimes flagged wrongly.</p></details>
+<details><summary>An emulator will not install, or says no matching download</summary><p>Emulators sometimes rename their download files. Open <strong>Settings</strong>, then <strong>Online updates</strong> and click <strong>Check now</strong>, because a fixed list may already be available. If it still fails, open an issue with the name of the emulator and the message you see.</p></details>
+<details><summary>A game does not start</summary><p>1) Check the <strong>Setup checklist</strong> for missing BIOS or firmware. 2) Make sure the emulator is installed (Emulators tab). 3) Open <strong>Settings</strong>, then <strong>Open log folder</strong> to see what happened. 4) Try the game directly in the emulator to tell whether the problem is the game file or Trayload.</p></details>
+<details><summary>The game page says &quot;no emulator installed&quot;</summary><p>Trayload no longer has an emulator for that console (for example PC Engine or Atari, which RetroArch used to cover). The game stays in your library. Community addons are planned to cover these consoles.</p></details>
+<details><summary>Trayload asks which console a file is for</summary><p>Some file types (like <code>.iso</code>, <code>.bin</code> or <code>.chd</code>) are used by several consoles and cannot always be recognised. Pick the console once and Trayload remembers. A folder named after the console (for example <code>PlayStation</code>) also helps it decide.</p></details>
+<details><summary>A game shows as missing</summary><p>Trayload cannot find the file where it was last seen, for example because a drive is disconnected or the file moved. Reconnect the drive or put the file back, then press <strong>Rescan</strong>.</p></details>
+<details><summary>Copying games stops with a space error</summary><p>Trayload checks free disk space before it copies. Free some space, or change the games folder to a drive with more room in <strong>Settings</strong>, then drop the games again. Anything already copied is kept, and identical files are skipped.</p></details>
+<details><summary>A cover is missing or wrong</summary><p>Covers come from libretro-thumbnails, and from SteamGridDB if you add a free key in Settings. Games with unusual names may not match. You can pick a different cover on the game's page.</p></details>
+<details><summary>There is no music</summary><p>Check that <strong>Play music</strong> is ticked in Settings and the volume is up. Music pauses automatically while a game is running.</p></details>
+<details><summary>I still have an old RetroArch folder</summary><p>Older versions installed RetroArch. Trayload offers to back up its saves and BIOS files and asks before deleting it. You can do it any time under <strong>Settings</strong>, then <strong>Old RetroArch folder</strong>.</p></details>
+<details><summary>Something else is wrong</summary><p>Open <strong>Settings</strong>, then <strong>Open log folder</strong>, and look at the newest log. Then <a href="https://github.com/Frontloxian/trayload/issues/new/choose">open an issue</a> with your Trayload version and what happened. Please do not attach ROMs, BIOS files or keys. Check the log for private file paths before pasting it.</p></details>
+</main>
+<footer>
+  <p>Trayload 1.2.0 · GPL-3.0 · <a href="https://github.com/Frontloxian/trayload">Source on GitHub</a> · <a href="https://github.com/Frontloxian/trayload/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/Frontloxian/trayload/issues/new/choose">Report a problem</a></p>
+  <p>Trayload does not provide or link game ROMs, BIOS files, firmware or keys. Use files from games and consoles you own.</p>
+</footer>
+</body>
+</html>

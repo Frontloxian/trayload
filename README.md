@@ -19,6 +19,10 @@ A Windows launcher for emulators. Install standalone emulators from their offici
 - Controller navigation and keyboard shortcuts
 - No telemetry. See [PRIVACY.md](PRIVACY.md)
 
+## Docs
+
+Getting started, a BIOS checklist for every system, a FAQ and troubleshooting: **https://frontloxian.github.io/trayload/**
+
 ## Install
 
 1. Go to **Releases** and download `Trayload_x.y.z_x64-setup.exe`.

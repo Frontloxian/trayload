@@ -1,0 +1,29 @@
+:root{--bg:#0b0e16;--panel:#131826;--line:#252c3f;--text:#e6e9f2;--muted:#9aa3b8;--accent:#6aa6ff;--warn:#f0b35a}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,Segoe UI,Roboto,sans-serif}
+a{color:var(--accent)}
+header{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0}
+.brand{font-weight:700;font-size:1.15rem;color:var(--text);text-decoration:none}
+nav{display:flex;flex-wrap:wrap;gap:6px 18px}
+nav a{color:var(--muted);text-decoration:none;padding:2px 0}
+nav a[aria-current=page],nav a:hover{color:var(--text);border-bottom:2px solid var(--accent)}
+main{max-width:860px;margin:0 auto;padding:28px 24px 60px}
+h1{font-size:2rem;margin:.2em 0 .4em}
+h2{margin:1.8em 0 .4em;font-size:1.4rem}
+h3{margin:1.4em 0 .3em;font-size:1.1rem}
+.lead{font-size:1.15rem;color:var(--muted)}
+.btn{display:inline-block;background:var(--accent);color:#08101f;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none}
+.card,.system{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:14px 0}
+.note{border-left:3px solid var(--warn);padding:6px 14px;background:#1a1810;border-radius:4px;color:#e8d9b8}
+.muted{color:var(--muted)}
+.pill{display:inline-block;font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:0 9px;color:var(--muted);margin-left:6px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.95rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+code{background:#1b2236;padding:1px 6px;border-radius:4px;font-size:.92em}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:600;padding:4px 0}
+ol li,ul li{margin:.35em 0}
+footer{border-top:1px solid var(--line);color:var(--muted);padding:18px 24px;text-align:center;font-size:.9rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

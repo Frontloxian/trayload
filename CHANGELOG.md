@@ -8,6 +8,7 @@ Each release's notes are shown inside Trayload (after updating, and under Settin
 - **Online updates for the emulator list:** if an emulator's download name changes, Trayload can pick up the fix from its GitHub page without a new app release. It is a plain download of a public file, there is an off switch in Settings > Online updates, and a downloaded list can never point an emulator at a different project or an unlisted host.
 - **Compatibility notes:** short per-game tips (for example "needs the Vulkan renderer") show on the game page, from a small community-editable list with a source link for every note.
 - **Desktop notifications** (off by default): a Windows notification when an emulator update is ready. Only while Trayload is open. Trayload also re-checks for updates every few hours while it stays open.
+- **Docs site** at https://frontloxian.github.io/trayload/ : getting started, a BIOS and firmware checklist for every system, a FAQ and troubleshooting.
 
 ## 1.2.0
 

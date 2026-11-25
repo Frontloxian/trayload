@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Systems and BIOS · Trayload</title>
+<meta name="description" content="Trayload is a free, open-source Windows launcher that installs and runs emulators from their official sources.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Trayload</a>
+  <nav aria-label="Main"><a href="index.html">Home</a><a href="getting-started.html">Getting started</a><a href="systems.html" aria-current="page">Systems and BIOS</a><a href="faq.html">FAQ</a><a href="troubleshooting.html">Troubleshooting</a></nav>
+</header>
+<main>
+<h1>Systems and BIOS</h1>
+<p class="lead">Which emulator Trayload uses for each console, and the files each one needs.</p>
+<p class="note">Trayload does not provide or link BIOS files, firmware or keys. Where one is needed, dump it from your own console. The Setup checklist in the app checks for these files and shows exactly where to put them.</p>
+<table><thead><tr><th>Console</th><th>Emulator</th><th>Needs</th></tr></thead><tbody>
+<tr><td><a href="#nes">NES / Famicom</a></td><td>Mesen 2</td><td>Optional files</td></tr>
+<tr><td><a href="#snes">Super Nintendo</a></td><td>Mesen 2</td><td>Optional files</td></tr>
+<tr><td><a href="#gb">Game Boy / Color</a></td><td>mGBA</td><td>Nothing extra</td></tr>
+<tr><td><a href="#gba">Game Boy Advance</a></td><td>mGBA</td><td>Optional files</td></tr>
+<tr><td><a href="#n64">Nintendo 64</a></td><td>RMG</td><td>Nothing extra</td></tr>
+<tr><td><a href="#nds">Nintendo DS</a></td><td>melonDS</td><td>Optional files</td></tr>
+<tr><td><a href="#3ds">Nintendo 3DS</a></td><td>Azahar</td><td>Optional files</td></tr>
+<tr><td><a href="#gc">GameCube</a></td><td>Dolphin</td><td>Optional files</td></tr>
+<tr><td><a href="#wii">Wii</a></td><td>Dolphin</td><td>Nothing extra</td></tr>
+<tr><td><a href="#wiiu">Wii U</a></td><td>Cemu</td><td>Optional files</td></tr>
+<tr><td><a href="#switch">Nintendo Switch</a></td><td>Eden</td><td>Required files</td></tr>
+<tr><td><a href="#ps1">PlayStation</a></td><td>DuckStation</td><td>Required files</td></tr>
+<tr><td><a href="#ps2">PlayStation 2</a></td><td>PCSX2</td><td>Required files</td></tr>
+<tr><td><a href="#ps3">PlayStation 3</a></td><td>RPCS3</td><td>Required files</td></tr>
+<tr><td><a href="#psp">PSP</a></td><td>PPSSPP</td><td>Nothing extra</td></tr>
+<tr><td><a href="#vita">PS Vita</a></td><td>Vita3K</td><td>Optional files</td></tr>
+<tr><td><a href="#dc">Dreamcast</a></td><td>Flycast</td><td>Optional files</td></tr>
+<tr><td><a href="#xbox">Original Xbox</a></td><td>xemu</td><td>Required files</td></tr>
+<tr><td><a href="#x360">Xbox 360</a></td><td>Xenia Canary</td><td>Nothing extra</td></tr>
+<tr><td><a href="#sms">Master System</a></td><td>ares</td><td>Nothing extra</td></tr>
+<tr><td><a href="#gg">Game Gear</a></td><td>ares</td><td>Nothing extra</td></tr>
+<tr><td><a href="#sg1000">SG-1000</a></td><td>ares</td><td>Nothing extra</td></tr>
+<tr><td><a href="#genesis">Sega Genesis / Mega Drive</a></td><td>ares</td><td>Nothing extra</td></tr>
+<tr><td><a href="#segacd">Sega CD</a></td><td>ares</td><td>Nothing extra</td></tr>
+<tr><td><a href="#s32x">Sega 32X</a></td><td>ares</td><td>Nothing extra</td></tr>
+<tr><td><a href="#saturn">Sega Saturn</a></td><td>Ymir</td><td>Required files</td></tr>
+<tr><td><a href="#arcade">Arcade</a></td><td>MAME</td><td>Optional files</td></tr>
+</tbody></table>
+<h2>Details</h2>
+<section class="system" id="nes">
+<h3>NES / Famicom<span class="pill">Mesen 2</span></h3>
+<p>Nintendo NES and Famicom games run without extra files.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Famicom Disk System BIOS (disksys.rom)</td><td>Optional</td><td>Size: 8 KB Optional. Only for Famicom Disk System games. Put it in the Firmware folder.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.nes</code> <code>.fds</code> <code>.unf</code></p>
+</section>
+<section class="system" id="snes">
+<h3>Super Nintendo<span class="pill">Mesen 2</span></h3>
+<p>Most Super Nintendo games run without extra files.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Extra-chip firmware (dsp1.rom, st010.rom and similar)</td><td>Optional</td><td>Optional. Only a few games with special chips ask for these.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.sfc</code> <code>.smc</code> <code>.fig</code></p>
+</section>
+<section class="system" id="gb">
+<h3>Game Boy / Color<span class="pill">mGBA</span></h3>
+<p>Game Boy and Game Boy Color games run without a BIOS. A real boot ROM is optional.</p>
+
+
+<p class="muted">File types: <code>.gb</code> <code>.gbc</code></p>
+</section>
+<section class="system" id="gba">
+<h3>Game Boy Advance<span class="pill">mGBA</span></h3>
+<p>mGBA has a built-in replacement BIOS, so games run without one. A real GBA BIOS is optional.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>GBA BIOS (gba_bios.bin)</td><td>Optional</td><td>Size: 16 KB Optional. Pick it in mGBA under Tools, Settings, BIOS.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.gba</code></p>
+</section>
+<section class="system" id="n64">
+<h3>Nintendo 64<span class="pill">RMG</span></h3>
+<p>Nintendo 64 games run without extra files.</p>
+
+
+<p class="muted">File types: <code>.z64</code> <code>.n64</code> <code>.v64</code></p>
+</section>
+<section class="system" id="nds">
+<h3>Nintendo DS<span class="pill">melonDS</span></h3>
+<p>melonDS has a built-in replacement BIOS and firmware, so games run without these. Real files are optional and improve compatibility.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>DS ARM7 BIOS (bios7.bin)</td><td>Optional</td><td>Size: 16 KB</td></tr><tr><td>DS ARM9 BIOS (bios9.bin)</td><td>Optional</td><td>Size: 4 KB</td></tr><tr><td>DS firmware (firmware.bin)</td><td>Optional</td><td>Size: 128 KB or 256 KB or 512 KB Set the paths in melonDS under Config, Emu settings, DS-mode.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.nds</code> <code>.dsi</code></p>
+</section>
+<section class="system" id="3ds">
+<h3>Nintendo 3DS<span class="pill">Azahar</span></h3>
+<p>Most 3DS games run without extra files.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Encrypted-game keys (aes_keys.txt)</td><td>Optional</td><td>Optional. Only for games that are still encrypted. Put it in the sysdata folder.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.3ds</code> <code>.cci</code> <code>.cxi</code></p>
+</section>
+<section class="system" id="gc">
+<h3>GameCube<span class="pill">Dolphin</span></h3>
+<p>GameCube games run without any extra files.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>GameCube BIOS (IPL.bin)</td><td>Optional</td><td>Optional. Only needed to see the GameCube boot logo. Put it in a USA, EUR or JAP folder inside this one.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.iso</code> <code>.gcm</code> <code>.rvz</code> <code>.gcz</code></p>
+</section>
+<section class="system" id="wii">
+<h3>Wii<span class="pill">Dolphin</span></h3>
+<p>Wii games run without extra files.</p>
+
+
+<p class="muted">File types: <code>.iso</code> <code>.wbfs</code> <code>.rvz</code> <code>.wad</code></p>
+</section>
+<section class="system" id="wiiu">
+<h3>Wii U<span class="pill">Cemu</span></h3>
+<p>Cemu needs the Wii U keys file to open encrypted game dumps. Decrypted dumps don't need it.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Wii U keys (keys.txt)</td><td>Optional</td><td>Optional if your games are decrypted. Use keys from your own console. Put it next to Cemu.exe.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.wud</code> <code>.wux</code> <code>.wua</code> <code>.rpx</code></p>
+</section>
+<section class="system" id="switch">
+<h3>Nintendo Switch<span class="pill">Eden</span></h3>
+<p>Eden needs prod.keys, and many games also need firmware, both from your own Switch. Trayload doesn't provide or link them.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Switch keys (prod.keys)</td><td><strong>Required</strong></td><td>Goes in the keys folder inside this one.</td></tr><tr><td>Switch firmware</td><td>Optional</td><td>Needed by many games. Install it from inside Eden (Tools, then Install Firmware).</td></tr></tbody></table>
+<p class="note">Needs prod.keys and firmware dumped from your own Switch. Trayload never provides or links them. Eden is downloaded from its official release server (git.eden-emu.dev, with files from stable.eden-emu.dev).</p>
+<p class="muted">File types: <code>.nsp</code> <code>.xci</code></p>
+</section>
+<section class="system" id="ps1">
+<h3>PlayStation<span class="pill">DuckStation</span></h3>
+<p>DuckStation needs a PlayStation BIOS file from your own console. One file is enough.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>PlayStation BIOS</td><td><strong>Required</strong></td><td>Size: 512 KB A 512 KB .bin file (for example scph5501.bin). Pick one that matches your games' region.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.bin</code> <code>.cue</code> <code>.chd</code> <code>.pbp</code></p>
+</section>
+<section class="system" id="ps2">
+<h3>PlayStation 2<span class="pill">PCSX2</span></h3>
+<p>PCSX2 needs a PlayStation 2 BIOS from your own console.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>PlayStation 2 BIOS</td><td><strong>Required</strong></td><td>Size: 4 MB A 4 MB .bin file. Pick one that matches your games' region.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.iso</code> <code>.chd</code> <code>.cso</code></p>
+</section>
+<section class="system" id="ps3">
+<h3>PlayStation 3<span class="pill">RPCS3</span></h3>
+<p>RPCS3 needs the PS3 system software from your own console, installed from RPCS3 under File, Install Firmware.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>PS3 system software (installed)</td><td><strong>Required</strong></td><td>Found after the firmware is installed. This check is a best guess.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.iso</code> <code>.pkg</code></p>
+</section>
+<section class="system" id="psp">
+<h3>PSP<span class="pill">PPSSPP</span></h3>
+<p>PSP games run without extra files.</p>
+
+
+<p class="muted">File types: <code>.iso</code> <code>.cso</code> <code>.pbp</code></p>
+</section>
+<section class="system" id="vita">
+<h3>PS Vita<span class="pill">Vita3K</span></h3>
+<p>Vita3K needs the PS Vita firmware and font package from your own console, installed from Vita3K under File. Install each game once in Vita3K (File, Install .vpk). After that, Play starts it by its Title ID.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>PS Vita firmware (installed)</td><td>Optional</td><td>Found after the firmware is installed. This check is a best guess, so it never blocks anything.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.vpk</code></p>
+</section>
+<section class="system" id="dc">
+<h3>Dreamcast<span class="pill">Flycast</span></h3>
+<p>Flycast has a built-in replacement BIOS, so these files are optional. Real ones can improve compatibility.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Dreamcast boot ROM (dc_boot.bin)</td><td>Optional</td><td>Size: 2 MB</td></tr><tr><td>Dreamcast flash (dc_flash.bin)</td><td>Optional</td><td>Size: 128 KB</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.gdi</code> <code>.cdi</code> <code>.chd</code></p>
+</section>
+<section class="system" id="xbox">
+<h3>Original Xbox<span class="pill">xemu</span></h3>
+<p>xemu needs three files from your own original Xbox: the boot ROM, the BIOS and a hard drive image. Set their paths in xemu under System.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>MCPX boot ROM</td><td><strong>Required</strong></td><td>Size: 512 bytes</td></tr><tr><td>Xbox BIOS (flash ROM)</td><td><strong>Required</strong></td><td>Size: 256 KB or 512 KB or 1 MB</td></tr><tr><td>Hard drive image</td><td><strong>Required</strong></td><td></td></tr></tbody></table>
+
+<p class="muted">File types: <code>.iso</code></p>
+</section>
+<section class="system" id="x360">
+<h3>Xbox 360<span class="pill">Xenia Canary</span></h3>
+<p>Xenia Canary runs without BIOS or firmware files.</p>
+
+
+<p class="muted">File types: <code>.iso</code> <code>.xex</code></p>
+</section>
+<section class="system" id="sms">
+<h3>Master System<span class="pill">ares</span></h3>
+<p>ares runs these games without extra files.</p>
+
+<p class="note">ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases.</p>
+<p class="muted">File types: <code>.sms</code></p>
+</section>
+<section class="system" id="gg">
+<h3>Game Gear<span class="pill">ares</span></h3>
+<p>ares runs these games without extra files.</p>
+
+<p class="note">ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases.</p>
+<p class="muted">File types: <code>.gg</code></p>
+</section>
+<section class="system" id="sg1000">
+<h3>SG-1000<span class="pill">ares</span></h3>
+<p>ares runs these games without extra files.</p>
+
+<p class="note">ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases.</p>
+<p class="muted">File types: <code>.sg</code></p>
+</section>
+<section class="system" id="genesis">
+<h3>Sega Genesis / Mega Drive<span class="pill">ares</span></h3>
+<p>ares runs these games without extra files.</p>
+
+<p class="note">ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases.</p>
+<p class="muted">File types: <code>.md</code> <code>.gen</code> <code>.smd</code> <code>.bin</code></p>
+</section>
+<section class="system" id="segacd">
+<h3>Sega CD<span class="pill">ares</span></h3>
+<p>Mega CD games need a Mega CD BIOS from your own console. ares asks for it the first time you start a Sega CD game, so there is nothing to place here yourself.</p>
+
+<p class="note">ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases.</p>
+<p class="muted">File types: <code>.cue</code> <code>.chd</code> <code>.iso</code></p>
+</section>
+<section class="system" id="s32x">
+<h3>Sega 32X<span class="pill">ares</span></h3>
+<p>ares runs these games without extra files.</p>
+
+<p class="note">ares' Windows downloads are currently unsigned (its code-signing certificate expired), so Windows may show a warning. Trayload only downloads from ares' official GitHub releases.</p>
+<p class="muted">File types: <code>.32x</code></p>
+</section>
+<section class="system" id="saturn">
+<h3>Sega Saturn<span class="pill">Ymir</span></h3>
+<p>Saturn games need a Saturn BIOS (IPL ROM) from your own console. Put it in the folder below.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Saturn BIOS (IPL ROM)</td><td><strong>Required</strong></td><td>Size: 512 KB Any one 512 KB Saturn BIOS file. Use the region that matches your games.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.cue</code> <code>.chd</code> <code>.ccd</code> <code>.mds</code></p>
+</section>
+<section class="system" id="arcade">
+<h3>Arcade<span class="pill">MAME</span></h3>
+<p>MAME needs a ROM set (a .zip per game) that matches its version. Trayload doesn't provide or link them.</p>
+<table><thead><tr><th>File</th><th></th><th>Notes</th></tr></thead><tbody><tr><td>Arcade ROM sets (.zip files)</td><td>Optional</td><td>Optional here. Put them in the roms folder.</td></tr></tbody></table>
+
+<p class="muted">File types: <code>.zip</code></p>
+</section>
+<h2>Not supported right now</h2>
+<p>Trayload no longer ships an emulator for: PC Engine / TurboGrafx-16, Atari 2600, Atari 5200, Atari 7800, Atari Lynx, Atari Jaguar, Neo Geo Pocket, WonderSwan, Virtual Boy, Pokemon Mini, ColecoVision, Intellivision, Vectrex, MSX, 3DO, PC-FX. Games you already added for these stay in your library, marked "no emulator installed". Community addons are planned to cover them later.</p>
+<p class="muted">This page is generated from the emulator list built into Trayload (list version 1), so it matches what the app checks.</p>
+</main>
+<footer>
+  <p>Trayload 1.2.0 · GPL-3.0 · <a href="https://github.com/Frontloxian/trayload">Source on GitHub</a> · <a href="https://github.com/Frontloxian/trayload/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/Frontloxian/trayload/issues/new/choose">Report a problem</a></p>
+  <p>Trayload does not provide or link game ROMs, BIOS files, firmware or keys. Use files from games and consoles you own.</p>
+</footer>
+</body>
+</html>

@@ -123,7 +123,7 @@ Installer, drag-and-drop import, library with art, launcher with playtime, setup
 - **Licensing:** pick an app license and check that bundled pieces (a 7z library, icons, fonts) allow redistribution
 - **Code signing and installer:** signing certificate, MSI or NSIS installer, SmartScreen reputation
 - **Auto-update for the app itself**
-- **Docs site:** getting started, BIOS checklist per system, FAQ, troubleshooting (planned for 1.3.0)
+- **Docs site:** getting started, BIOS checklist per system, FAQ, troubleshooting (built in 1.3.0; regenerate with `node scripts/build-docs.mjs` whenever the emulator list changes)
 - **Privacy:** state clearly that there is no telemetry, and list every network call
 - **Beta test:** a small group, a feedback channel, a crash report option that is opt-in
 

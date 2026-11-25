@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ · Trayload</title>
+<meta name="description" content="Trayload is a free, open-source Windows launcher that installs and runs emulators from their official sources.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Trayload</a>
+  <nav aria-label="Main"><a href="index.html">Home</a><a href="getting-started.html">Getting started</a><a href="systems.html">Systems and BIOS</a><a href="faq.html" aria-current="page">FAQ</a><a href="troubleshooting.html">Troubleshooting</a></nav>
+</header>
+<main>
+<h1>FAQ</h1>
+<details><summary>Does Trayload include games, BIOS files or keys?</summary><p>No. Trayload does not provide, host or link ROMs, BIOS files, firmware or keys, and it will never ask you to share them. Use files dumped from games and consoles you own.</p></details>
+<details><summary>Is it free? What is the license?</summary><p>Yes. Trayload is free and open source under the GPL-3.0 license. The built-in music and the logo are under CC BY-NC 4.0.</p></details>
+<details><summary>Does it collect any data?</summary><p>No telemetry, no analytics, no accounts and no crash reporting. Every network request Trayload makes is listed in the <a href="https://github.com/Frontloxian/trayload/blob/main/PRIVACY.md">privacy page</a>.</p></details>
+<details><summary>Why does Windows warn me when I install it?</summary><p>The installer is not code-signed yet (a signing certificate costs money), so SmartScreen shows a warning for unknown publishers. Choose More info, then Run anyway. Releases are built by GitHub from the public source code.</p></details>
+<details><summary>Where does Trayload get emulators?</summary><p>Only from each emulator's official release page (GitHub, or the project's own site). Downloads from any other site are refused.</p></details>
+<details><summary>Which consoles are supported?</summary><p>See <a href="systems.html">Systems and BIOS</a>. It lists every console, its emulator and what it needs.</p></details>
+<details><summary>What happened to RetroArch?</summary><p>Trayload used to run some older consoles through RetroArch. It was dropped because BIOS setup was awkward and individual emulators are easier to manage. Sega consoles moved to their own emulators (ares and Ymir). The other consoles are planned to come back through community addons. Games you already added stay in your library.</p></details>
+<details><summary>Does Trayload copy my games?</summary><p>Games you drag onto the window are copied into the games folder, one folder per console, and your originals are left alone. Folders you add with Add folder are scanned in place. Existing games can be brought into the games folder from Settings, as a copy or a move.</p></details>
+<details><summary>What does 'Delete permanently' do?</summary><p>It removes every trace of a game from Trayload: the entry, cover, play time, favorite and collections. Files in Trayload's games folder go to the Recycle Bin (games that were moved in go back to where they came from). Files anywhere else are never touched.</p></details>
+<details><summary>Can I use an emulator that is not on the list?</summary><p>Not yet. Addons that add emulators and themes are planned for a later version.</p></details>
+<details><summary>Does it work on Mac or Linux?</summary><p>Not at the moment. Trayload is Windows-only.</p></details>
+<details><summary>How do I back up my saves?</summary><p>In Settings, use the backup section to copy saves, save states and emulator settings to a USB drive or any folder you pick.</p></details>
+<details><summary>How do I uninstall it?</summary><p>Use Windows "Installed apps". Trayload's data (library, covers, emulators, logs) is in <code>%LOCALAPPDATA%\com.loxianthepeak.trayload</code> and your games folder is under <code>Documents\Trayload</code>. Neither is deleted automatically, so you can remove them by hand if you want everything gone.</p></details>
+</main>
+<footer>
+  <p>Trayload 1.2.0 · GPL-3.0 · <a href="https://github.com/Frontloxian/trayload">Source on GitHub</a> · <a href="https://github.com/Frontloxian/trayload/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/Frontloxian/trayload/issues/new/choose">Report a problem</a></p>
+  <p>Trayload does not provide or link game ROMs, BIOS files, firmware or keys. Use files from games and consoles you own.</p>
+</footer>
+</body>
+</html>
