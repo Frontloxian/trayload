@@ -2,6 +2,11 @@
 
 Each release's notes are shown inside Trayload (after updating, and under Settings > Trayload updates > What's new) and on the GitHub release page. The newest version goes at the top, under its own `## x.y.z` heading.
 
+## 1.4.0
+
+### New
+- **Easier Settings:** the page is split into sections (Games, Artwork and music, Updates, Backup, Advanced) in a list on the left, with a search box that finds a setting by name. Messages stay visible at the top while you scroll. Rarely used items are under Advanced. No setting changed or was removed.
+
 ## 1.3.0
 
 ### New

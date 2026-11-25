@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import BackupPanel from "./BackupPanel";
@@ -21,6 +21,14 @@ import type { Music } from "./useMusic";
 import type { AppUpdate } from "./useAppUpdate";
 
 export default function Settings({ music, appUpdate, onWhatsNew }: { music: Music; appUpdate: AppUpdate; onWhatsNew: () => void }) {
+  const [tab, setTab] = useState<string>(() => {
+    try {
+      return localStorage.getItem("trayload.settingsTab") || "games";
+    } catch {
+      return "games";
+    }
+  });
+  const [query, setQuery] = useState("");
   const [hasKey, setHasKey] = useState(false);
   const [key, setKey] = useState("");
   const [folders, setFolders] = useState<string[]>([]);
@@ -198,6 +206,28 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
 
   useEffect(load, [load]);
 
+  // Show one section at a time; a search shows every matching section instead.
+  const paneRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const q = query.trim().toLowerCase();
+    let hits = 0;
+    paneRef.current?.querySelectorAll<HTMLElement>("[data-group]").forEach((el) => {
+      const show = q ? (el.textContent ?? "").toLowerCase().includes(q) : el.dataset.group === tab;
+      el.hidden = !show;
+      if (show) hits++;
+    });
+    if (paneRef.current) paneRef.current.dataset.hits = String(hits);
+  });
+  function pickTab(id: string) {
+    setTab(id);
+    setQuery("");
+    try {
+      localStorage.setItem("trayload.settingsTab", id);
+    } catch {
+      /* fine without it */
+    }
+  }
+
   async function act(fn: () => Promise<unknown>, done: string) {
     setError(null);
     setMsg("");
@@ -210,16 +240,46 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
     load();
   }
 
-  return (
-    <>
-      {error && <p className="error">{error}</p>}
-      {msg && (
-        <p className="muted" aria-live="polite">
-          {msg}
-        </p>
-      )}
+  const TABS: [string, string][] = [
+    ["games", "Games"],
+    ["look", "Artwork and music"],
+    ["updates", "Updates"],
+    ["backup", "Backup"],
+    ["advanced", "Advanced"],
+  ];
 
-      <section className="section">
+  return (
+    <div className="settings-layout">
+      <nav className="settings-nav" aria-label="Settings sections">
+        <input
+          type="search"
+          className="settings-search"
+          placeholder="Search settings"
+          aria-label="Search settings"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {TABS.map(([id, label]) => (
+          <button
+            key={id}
+            className={"settings-tab" + (!query && tab === id ? " active" : "")}
+            aria-current={!query && tab === id ? "page" : undefined}
+            onClick={() => pickTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      <div className="settings-pane" ref={paneRef}>
+      {(error || msg) && (
+        <div className="settings-flash" aria-live="polite">
+          {error && <p className="error">{error}</p>}
+          {msg && <p className="muted">{msg}</p>}
+        </div>
+      )}
+      {query && <p className="muted small">Showing sections that mention "{query}". Clear the search to go back to the sections.</p>}
+
+      <section className="section" data-group="look">
         <h2>Artwork</h2>
         <p className="muted">
           Covers come from libretro-thumbnails (no key needed) and, if you add a key, SteamGridDB. Get a free key on
@@ -260,7 +320,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" data-group="look">
         <h2>Music</h2>
         <p className="muted">
           Trayload plays the soundtrack in the background and pauses it while a game runs. A music pack is a folder of
@@ -355,7 +415,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         {music.error && <p className="error small">{music.error}</p>}
       </section>
 
-      <section className="section">
+      <section className="section" data-group="games">
         <h2>Games folder</h2>
         <p className="muted">
           Games you drag onto Trayload are copied into this folder, in one folder per console (for example Nintendo
@@ -403,7 +463,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         {orgNote && <p className={orgNote.bad ? "error small" : "muted small"}>{orgNote.text}</p>}
       </section>
 
-      <section className="section">
+      <section className="section" data-group="games">
         <h2>Scanned folders</h2>
         <p className="muted">
           These folders are scanned every time Trayload starts, and their games stay where they are (nothing is copied).
@@ -424,7 +484,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         )}
       </section>
 
-      <section className="section">
+      <section className="section" data-group="updates">
         <h2>Trayload updates</h2>
         <p className="muted">
           Trayload {info?.version ?? ""}. Checking for an update contacts github.com (this project's releases) and
@@ -465,7 +525,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         {appUpdate.state === "error" && <p className="error">Could not check for updates: {appUpdate.error}</p>}
       </section>
 
-      <section className="section">
+      <section className="section" data-group="updates">
         <h2>Online updates</h2>
         <p className="muted">
           Trayload can fetch a newer emulator list (download names and launch options) and compatibility notes from its
@@ -504,7 +564,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         </label>
       </section>
 
-      <section className="section">
+      <section className="section" data-group="updates">
         <h2>Emulator updates</h2>
         <p className="muted">
           Trayload always shows "Update ready" when a newer emulator version exists. You can also let it install
@@ -527,7 +587,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
         </label>
       </section>
 
-      <section className="section">
+      <section className="section" data-group="games">
         <h2>Removed games</h2>
         <p className="muted">
           Games you removed from the library stay out of it, even when a folder is scanned again. Restore one to bring
@@ -563,7 +623,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
       </section>
 
       {ignored.length > 0 && (
-        <section className="section">
+        <section className="section" data-group="games">
           <h2>Ignored files</h2>
           <p className="muted">
             These files were deleted from Trayload but still sit in a folder it scans, so Trayload remembers only their
@@ -586,15 +646,17 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
       )}
 
       {legacy?.present && (
-        <section className="section">
+        <section className="section" data-group="advanced">
           <h2>Old RetroArch folder</h2>
           <LegacyCleanup status={legacy} onChanged={load} />
         </section>
       )}
 
-      <BackupPanel />
+      <div data-group="backup">
+        <BackupPanel />
+      </div>
 
-      <section className="section">
+      <section className="section" data-group="advanced">
         <h2>About and troubleshooting</h2>
         <p className="muted">
           Trayload {info?.version ?? ""} keeps a small log file on this PC to help find problems. Nothing is ever sent
@@ -713,6 +775,7 @@ export default function Settings({ music, appUpdate, onWhatsNew }: { music: Musi
           </div>
         </Dialog>
       )}
-    </>
+      </div>
+    </div>
   );
 }

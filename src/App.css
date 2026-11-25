@@ -357,3 +357,16 @@ ul.plain {
 .now-playing { position: fixed; right: 20px; bottom: 20px; z-index: 35; display: grid; gap: 2px; padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.45); }
 .about-head { display: flex; gap: 18px; align-items: center; }
 .credit-list li { padding: 4px 0; }
+
+/* Settings: sections in a side list, with search (M19) */
+.settings-layout { display: flex; gap: 24px; align-items: flex-start; }
+.settings-nav { position: sticky; top: 8px; width: 190px; flex: none; display: flex; flex-direction: column; gap: 4px; }
+.settings-search { width: 100%; margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: inherit; font: inherit; }
+.settings-tab { text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.settings-tab:hover { color: inherit; background: var(--panel); }
+.settings-tab.active { color: inherit; background: var(--panel); border-color: var(--border); box-shadow: inset 3px 0 0 var(--primary); }
+.settings-pane { flex: 1; min-width: 0; }
+.settings-flash { position: sticky; top: 0; z-index: 5; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 2px 14px; margin-bottom: 12px; max-width: 720px; }
+.settings-flash:empty { display: none; }
+.settings-pane [hidden] { display: none !important; }
+@media (max-width: 760px) { .settings-layout { flex-direction: column; } .settings-nav { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; } .settings-search { flex-basis: 100%; } }

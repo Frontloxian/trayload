@@ -13,7 +13,7 @@ Small releases, roughly one every few weeks. Each release gets a `## x.y.z` sect
 | **1.1.5** | Games folder and cleanup (first half) | Shipped early because it does so much: default games folder with a folder per console and copy on drag, RetroArch removed (Sega systems move to ares and Ymir), permanent delete in Removed games, multi-disc handling |
 | **1.2.0** | Library tools | Move existing games into the games folder (see below), Install all, smart collections, music skip and shuffle with a "Now playing" toast, an About and Credits page |
 | **1.3.0** | Keeps itself working | Hosted registry (fix a broken emulator download without a new app release), the docs site (getting started, BIOS checklist per system, FAQ, troubleshooting), optional desktop notifications for major emulator releases, per-game compatibility notes |
-| **1.4.0** | Know your games | ROM verification against No-Intro and Redump lists, release year, developer and genre info, manual cover picker, region and version grouping |
+| **1.4.0** | Know your games | Settings page reorganised into sections with search, ROM verification against No-Intro and Redump lists, release year, developer and genre info, manual cover picker, region and version grouping |
 | **1.5.0** | Addons and play features | Data-only addons (themes, emulator profiles, extra news feeds, music packs), saves and save-state manager, controller layouts per system, screenshot gallery, CRT and shader presets |
 | **1.6.0** | Community | Homebrew and freeware shelf, IPS/BPS patching on a copy, RetroAchievements |
 | **1.7.0** | Code addons | Addons that run code (launch hooks, Discord presence, overlays), with permissions and a clear warning before enabling |
